@@ -1,0 +1,24 @@
+# Xcode / project generation (XcodeGen regeneruje project.yml -> .xcodeproj, necommituj .xcodeproj)
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode build artefakty
+DerivedData/
+*.xcresult
+
+# macOS
+.DS_Store
+
+# Simulátor / device logy, ak náhodou skončia v repe
+*.ips
+*.crash
+
+# lokálne env / tajomstvá (nikdy necommituj API kľúče, tokeny)
+.env
+*.pem
