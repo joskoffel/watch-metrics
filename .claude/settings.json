@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/id_rsa*)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(curl * | bash)",
+      "Bash(curl * | sh)"
+    ]
+  }
+}
