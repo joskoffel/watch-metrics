@@ -1,0 +1,75 @@
+[# Project status — watch-metrics
+
+Posledná aktualizácia: 2026-07-23
+
+## Čo je to
+
+watchOS aplikácia LEN pre odvodené metriky (HRV status, RHR odchýlka, sleep score,
+readiness, SpO2, dychová frekvencia). NEtrackuje aktivity — tie trackuje natívna
+Workout app, my ich len čítame z HealthKitu. Solo dev, nulový rozpočet, agent-driven
+vývoj cez Claude Code. Plné pozadie a architektonické rozhodnutia: pozri docs/ (ak tam plán je
+uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
+
+## Kľúčové rozhodnutia (nemeň bez dobrého dôvodu)
+
+- **Denné HRV okno, nie 3-dňové kĺzavé.** Reálne dáta z Health exportu (90 dní)
+  ukázali medián 9 HRV vzoriek/noc, 92% nocí ≥5 vzoriek — lepšie než pôvodný
+  konzervatívny predpoklad. M1/M2 (HRV status) sa počíta na dennej báze
+  s 7d/28d baseline.
+- VO2max dostupný len ~26% dní → nikdy nesmie blokovať readiness výpočet,
+  traktuje sa ako "keď je k dispozícii".
+- AppleSleepingWristTemperature chodí ako 1 vzorka/noc (Applov hotový priemer),
+  neagregovať sám.
+- HKHeartbeatSeries (RR intervaly pre RMSSD) NIE JE v Health exporte — treba
+  overiť cez HKHeartbeatSeriesQuery priamo v appke neskôr (zatiaľ nespravené).
+  Zatiaľ sa stavia len na SDNN.
+- Sources/MetricsCore je čistý Swift Package: nesmie importovať HealthKit,
+  CoreLocation ani SwiftUI. Testy pred implementáciou (TDD).
+
+## Stav repozitára
+
+- GitHub: https://github.com/joskoffel/watch-metrics (public — zostáva public
+  kvôli zadarmo GitHub Actions macOS runnerom neskôr)
+- `.gitignore` hotový
+- `.claude/settings.json` hotový — deny pravidlá na ~/.ssh, ~/.aws, ~/.gnupg,
+  .env, .pem, id_rsa, rm -rf, force push
+- Sandbox v Claude Code zapnutý ("Sandbox BashTool, with auto-allow")
+- `docs/data-availability-report.md` — reálna analýza z Health exportu, commitnuté
+- `CLAUDE.md`, `Package.swift`, `Sources/MetricsCore/{SensorSample,Baseline}.swift`,
+  `Tests/MetricsCoreTests/HRVStatusTests.swift` — vytvorené agentom, over že sú
+  commitnuté (git status / git log)
+
+## Čo ešte chýba (v poradí, ako na to)
+
+1. **Xcode.** Bol nainštalovaný Command Line Tools bez plného Xcode.app →
+   `swift test` skompiloval, ale nespustil test (chýba Testing.framework).
+   Treba: Mac App Store → Xcode → `sudo xcode-select --switch
+   /Applications/Xcode.app/Contents/Developer` → `sudo xcodebuild -license
+   accept` → over `xcode-select -p`.
+2. Po Xcode: `swift test --parallel` v `watch-metrics` — očakávaj build OK,
+   1 test zlyhá (správne, TDD).
+3. Implementovať fixture `Tests/Fixtures/night_sparse_hrv.json` (a ďalšie
+   z pôvodného plánu) na základe reálnych dát z data-availability-report.md.
+4. Implementovať RRArtifactFilter + RMSSD/HRV výpočet proti fixture (TDD).
+5. BaselineTracker (7d/28d kĺzavé okná).
+6. HRVStatus (dnešná hodnota vs baseline + confidence skóre).
+7. Postupne ďalšie metriky: RHR odchýlka, sleep score, readiness kompozita.
+
+## Nástroje a workflow
+
+- Claude Code beží lokálne v termináli, v priečinku `watch-metrics`
+- Remote Control (`/rc`) nastavený na ovládanie z telefónu — pokračuje v tej
+  istej terminálovej session, ale vyžaduje bežiaci Mac (spadne pri hlbokom
+  spánku, treba `/rc` znova po zobudení)
+- Zvažuje sa Claude Code on the web (claude.ai/code) pre prácu bez nutnosti
+  mať Mac zapnutý — vhodné najmä pokým sa pracuje na MetricsCore (nepotrebuje
+  Xcode/simulátor). Pre Fázu 3+ (watchOS build) treba späť lokálny Mac.
+- Token hygiena: `/clear` medzi neuzavretými úlohami, default model (Sonnet),
+  Opus len na architektonické rozhodnutia, XcodeBuildMCP zatiaľ nepridané
+  (nepotrebné kým nie je UI/watchOS target).
+
+## Ako pokračovať v novom chate
+
+Vlož tento súbor (alebo jeho obsah) do nového chatu so správou v štýle:
+"Pokračujeme v projekte watch-metrics, toto je stav, poď ďalej odtiaľto."
+]
