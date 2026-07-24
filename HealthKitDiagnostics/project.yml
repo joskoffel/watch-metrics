@@ -24,6 +24,7 @@ targets:
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "4"
         GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_NSHealthShareUsageDescription: "Diagnostic tool (Gate G0.2, not the production app): reads HealthKit heartbeat series data to check RR-interval availability for watch-metrics development."
         INFOPLIST_KEY_WKApplication: YES
         INFOPLIST_KEY_WKWatchOnly: YES
