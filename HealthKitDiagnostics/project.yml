@@ -3,12 +3,17 @@ options:
   bundleIdPrefix: com.watchmetrics.diagnostics
   deploymentTarget:
     watchOS: "10.0"
+packages:
+  MetricsCore:
+    path: ..
 targets:
   HealthKitDiagnostics:
     type: application
     platform: watchOS
     sources:
       - path: HealthKitDiagnostics
+    dependencies:
+      - package: MetricsCore
     entitlements:
       path: HealthKitDiagnostics/HealthKitDiagnostics.entitlements
       properties:
