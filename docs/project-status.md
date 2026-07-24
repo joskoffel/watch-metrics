@@ -41,13 +41,18 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
 
 ## Čo ešte chýba (v poradí, ako na to)
 
-1. **Xcode.** Bol nainštalovaný Command Line Tools bez plného Xcode.app →
-   `swift test` skompiloval, ale nespustil test (chýba Testing.framework).
-   Treba: Mac App Store → Xcode → `sudo xcode-select --switch
-   /Applications/Xcode.app/Contents/Developer` → `sudo xcodebuild -license
-   accept` → over `xcode-select -p`.
-2. Po Xcode: `swift test --parallel` v `watch-metrics` — očakávaj build OK,
-   1 test zlyhá (správne, TDD).
+1. ~~**Xcode.**~~ ✅ (2026-07-24) — Xcode.app stále nie je nainštalovaný (len
+   Command Line Tools), a prvý pokus o `swift test` zlyhal presne na
+   `no such module 'Testing'` (Testing.framework nedostupný pre SPM bez
+   plného Xcode). Na opakovaný pokus to ale prešlo — CLT toolchain vie
+   nájsť Testing.framework, len nekonzistentne (dôvod zatiaľ nejasný,
+   možno cache/module-cache stav). Netreba teda čakať na Mac App Store
+   Xcode inštaláciu, ale počítaj s tým, že `swift test` môže občas zlyhať
+   na chýbajúcom module a treba ho pustiť znova.
+2. ~~Po Xcode: `swift test --parallel`~~ ✅ (2026-07-24) — build OK, 1/1 test
+   zlyhal ako očakávane: `hrvStatusComputesFromDailySamplesAgainstBaseline`
+   — "HRVStatus not implemented yet — M1/M2 daily HRV status with 7d/28d
+   baseline". Žiadne zakázané importy v Sources/MetricsCore (over grep).
 3. Implementovať fixture `Tests/Fixtures/night_sparse_hrv.json` (a ďalšie
    z pôvodného plánu) na základe reálnych dát z data-availability-report.md.
 4. Implementovať RRArtifactFilter + RMSSD/HRV výpočet proti fixture (TDD).
