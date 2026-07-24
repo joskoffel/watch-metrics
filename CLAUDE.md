@@ -49,3 +49,33 @@ pre implementáciu:
 - Rýchly test loop: `swift test --parallel` — musí bežať pod 5s, žiadny
   Xcode build, žiadny simulátor. Toto je hlavný feedback loop počas vývoja
   MetricsCore.
+
+## Formát priebežných reportov
+
+Po KAŽDOM kroku (nie len na finálnom checkpointe) daj stručný report
+namiesto plného výpisu nástrojov/príkazov/search výsledkov. Formát:
+
+- Čo si urobil: 1-2 vety, len výsledok, nie proces (nie "Web Search(...),
+  Fetch(...), Read 1 file" – to je šum, nie signál)
+- Čo si zistil/rozhodol (ak relevantné): 1 veta, len ak to mení plán
+  alebo je to niečo, čo musím vedieť (napr. "API sa volá inak, než sme
+  predpokladali: X namiesto Y")
+- Výsledok/stav: prešlo/zlyhalo, a ak zlyhalo, presne na čom
+- Čo potrebuješ odo mňa (ak niečo): jedna jasná otázka/akcia
+
+NEPOUŽÍVAJ: surové tool-call logy, "Ran N shell commands", search query
+reťazce, plné cesty k dočasným súborom, timestampy nástrojov. Toto všetko
+zostáva v internom behu, nie v reporte pre používateľa.
+
+Príklad DOBRÉHO reportu:
+"Overil som HealthKit API – správny názov je HKSeriesType.heartbeat(),
+nie HKObjectType.heartbeatSeriesType() (pôvodne navrhnuté meno neexistuje).
+Napísal som diagnostickú logiku (nový súbor HeartbeatSeriesDiagnostics.swift)
+a UI (DiagnosticsView.swift). Build zlyhal na rovnakom signing probléme ako
+minule – project.yml má Team ID, ale po xcodegen regenerácii treba znova
+otvoriť Xcode GUI, aby sa provisioning profile znova rozpoznal.
+Potrebujem: otvor Xcode, skontroluj Signing & Capabilities, potvrď že je
+to čisté, a dám vedieť."
+
+Toto pravidlo platí pre všetky budúce kroky v tomto projekte, nielen
+pre tento.
