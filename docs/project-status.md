@@ -20,9 +20,18 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
   traktuje sa ako "keď je k dispozícii".
 - AppleSleepingWristTemperature chodí ako 1 vzorka/noc (Applov hotový priemer),
   neagregovať sám.
-- HKHeartbeatSeries (RR intervaly pre RMSSD) NIE JE v Health exporte — treba
-  overiť cez HKHeartbeatSeriesQuery priamo v appke neskôr (zatiaľ nespravené).
-  Zatiaľ sa stavia len na SDNN.
+- **Gate G0.2 overené (2026-07-24): HKHeartbeatSeriesQuery reálne funguje.**
+  HKHeartbeatSeries (RR intervaly) nie je v Health exporte, ale priamo cez
+  HealthKit na zariadení áno — overené diagnostickou appkou
+  (`HealthKitDiagnostics/`, samostatný watchOS target mimo SwiftPM balíka):
+  **71 series za posledných 7 dní, prvá séria obsahuje 24 RR intervalov.**
+  RRArtifactFilter + RMSSD (krok 4) sa teda dajú napojiť na reálne dáta,
+  nie len syntetické — RMSSD už nie je natrvalo blokované na SDNN.
+  `HealthKitDiagnostics` zostáva čisto diagnostický nástroj (Gate G0.2),
+  nie súčasť produkčnej appky — jeho HealthKit query logika sa musí
+  neskôr prepísať/presunúť do reálnej watch-metrics appky ako HealthKit
+  integračná vrstva (samostatný budúci krok, mimo Sources/MetricsCore,
+  keďže MetricsCore nesmie importovať HealthKit).
 - Sources/MetricsCore je čistý Swift Package: nesmie importovať HealthKit,
   CoreLocation ani SwiftUI. Testy pred implementáciou (TDD).
 
@@ -73,9 +82,17 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
    je teraz zelený spolu s 4 ďalšími edge-case testami (žiadne vzorky, nízka
    confidence baseline, fallback na 7d, symetrický high prípad).
    **Týmto je celý M1/M2 blok hotový (kroky 3–6).**
-7. Postupne ďalšie metriky: RHR odchýlka, sleep score, readiness kompozita.
-   Ďalší krok (M3 RHR, alebo overenie HKHeartbeatSeriesQuery pre RR intervaly,
-   alebo niečo iné) sa rozhodne spoločne s používateľom, nie automaticky.
+7. ~~Overenie HKHeartbeatSeriesQuery (Gate G0.2)~~ ✅ (2026-07-24) —
+   `HealthKitDiagnostics/` (samostatný watchOS Xcode target, xcodegen,
+   mimo Sources/MetricsCore) nainštalovaný a spustený na reálnych
+   hodinkách. Výsledok: **71 series/7 dní, 24 RR intervalov v prvej
+   sérii.** Real RR dáta sú dostupné — RMSSD pipeline z kroku 4 sa dá
+   napojiť na reálne dáta, nie len syntetické (viď aj Kľúčové rozhodnutia
+   vyššie). HealthKitDiagnostics zostáva diagnostický nástroj; presun
+   jeho query logiky do produkčnej appky je samostatný budúci krok.
+8. Postupne ďalšie metriky: RHR odchýlka, sleep score, readiness kompozita,
+   a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
+   Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 
 ## Nástroje a workflow
 
