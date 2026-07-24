@@ -1,0 +1,32 @@
+[
+  {
+    "kind": "heartRateVariabilitySDNN",
+    "timestamp": "2026-07-15T23:51:07Z",
+    "value": 34.6,
+    "unit": "milliseconds"
+  },
+  {
+    "kind": "heartRateVariabilitySDNN",
+    "timestamp": "2026-07-16T01:14:52Z",
+    "value": 52.1,
+    "unit": "milliseconds"
+  },
+  {
+    "kind": "heartRateVariabilitySDNN",
+    "timestamp": "2026-07-16T02:47:19Z",
+    "value": 27.8,
+    "unit": "milliseconds"
+  },
+  {
+    "kind": "heartRateVariabilitySDNN",
+    "timestamp": "2026-07-16T04:22:38Z",
+    "value": 61.4,
+    "unit": "milliseconds"
+  },
+  {
+    "kind": "heartRateVariabilitySDNN",
+    "timestamp": "2026-07-16T06:09:41Z",
+    "value": 44.3,
+    "unit": "milliseconds"
+  }
+]
