@@ -53,12 +53,29 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
    zlyhal ako očakávane: `hrvStatusComputesFromDailySamplesAgainstBaseline`
    — "HRVStatus not implemented yet — M1/M2 daily HRV status with 7d/28d
    baseline". Žiadne zakázané importy v Sources/MetricsCore (over grep).
-3. Implementovať fixture `Tests/Fixtures/night_sparse_hrv.json` (a ďalšie
-   z pôvodného plánu) na základe reálnych dát z data-availability-report.md.
-4. Implementovať RRArtifactFilter + RMSSD/HRV výpočet proti fixture (TDD).
-5. BaselineTracker (7d/28d kĺzavé okná).
-6. HRVStatus (dnešná hodnota vs baseline + confidence skóre).
+3. ~~Implementovať fixture `Tests/Fixtures/night_sparse_hrv.json`~~ ✅
+   (2026-07-24) — 5 vzoriek, hraničný prípad podľa data-availability-report.md,
+   plus decode-verification test proti `SensorSample` (ISO8601 → Date).
+4. ~~Implementovať RRArtifactFilter + RMSSD výpočet~~ ✅ (2026-07-24) —
+   `RRInterval`, `RRArtifactFilter` (300–2000ms rozsah + 20% successive-change
+   pravidlo), `RMSSD.calculate` (nil pre <2 intervaly). Otestované len proti
+   syntetickým RR dátam — reálne RR intervaly stále čakajú na
+   HKHeartbeatSeriesQuery overenie.
+5. ~~BaselineTracker (7d/28d kĺzavé okná)~~ ✅ (2026-07-24) — `Baseline`
+   (dátový typ, nahradil prázdny protokol) + `BaselineTracker` (výpočet),
+   medián namiesto priemeru, confidence z pomeru dostupných/očakávaných dní
+   v okne (≥0.85 high, ≥0.5 medium, inak low).
+6. ~~HRVStatus (dnešná hodnota vs baseline + confidence skóre)~~ ✅
+   (2026-07-24) — denný medián SDNN vs 7d/28d baseline (preferuje 28d,
+   fallback na 7d), ±10% pásmo pre low/normal/high (poznačené ako heuristika
+   na neskoršiu kalibráciu), confidence preberá z použitého baseline okna.
+   Pôvodne červený test `hrvStatusComputesFromDailySamplesAgainstBaseline`
+   je teraz zelený spolu s 4 ďalšími edge-case testami (žiadne vzorky, nízka
+   confidence baseline, fallback na 7d, symetrický high prípad).
+   **Týmto je celý M1/M2 blok hotový (kroky 3–6).**
 7. Postupne ďalšie metriky: RHR odchýlka, sleep score, readiness kompozita.
+   Ďalší krok (M3 RHR, alebo overenie HKHeartbeatSeriesQuery pre RR intervaly,
+   alebo niečo iné) sa rozhodne spoločne s používateľom, nie automaticky.
 
 ## Nástroje a workflow
 
