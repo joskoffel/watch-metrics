@@ -115,6 +115,27 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
   Opus len na architektonické rozhodnutia, XcodeBuildMCP zatiaľ nepridané
   (nepotrebné kým nie je UI/watchOS target).
 
+## Known issues
+
+- **xcodebuild CLI signing po xcodegen generate (2026-07-25).** Known issue
+  (nie definitívne overený limit): xcodebuild spustený z CLI/agent kontextu
+  opakovane zlyhával na "No Account for Team" hneď po xcodegen generate, aj
+  keď DevelopmentTeam bol správne v project.pbxproj. Pridanie attributes:
+  bloku do project.yml problém nevyriešilo pri jednom teste, ale pri
+  revertovaní sa ukázalo, že TargetAttributes v pbxproj si DevelopmentTeam
+  hodnotu drží/cachuje naprieč regeneráciami neočakávane – čo spochybňuje,
+  že ide o čistý, reprodukovateľný limit. Nie je isté, či ide o timing
+  (Xcode GUI proces bežiaci na pozadí verzus CLI), cache, alebo niečo iné.
+
+  Overený, spoľahlivý postup zatiaľ: ak CLI build zlyhá na "No Account for
+  Team", otvor Xcode GUI → Signing & Capabilities → ručne vyber Team z
+  dropdownu → počkaj na čistý stav → skús CLI build znova. Toto vždy
+  zafungovalo doteraz (4x), aj keď presný mechanizmus prečo nie je jasný.
+
+  Ak sa niekedy v budúcnosti bude toto skúmať hlbšie, začni tým, že over
+  TargetAttributes v pbxproj PRED a PO xcodegen generate (nie len po), aby
+  bolo jasné, čo presne sa mení/nemení pri regenerácii.
+
 ## Ako pokračovať v novom chate
 
 Vlož tento súbor (alebo jeho obsah) do nového chatu so správou v štýle:
