@@ -90,8 +90,16 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
    napojiť na reálne dáta, nie len syntetické (viď aj Kľúčové rozhodnutia
    vyššie). HealthKitDiagnostics zostáva diagnostický nástroj; presun
    jeho query logiky do produkčnej appky je samostatný budúci krok.
-8. Postupne ďalšie metriky: RHR odchýlka, sleep score, readiness kompozita,
-   a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
+8. ~~M3 — RHR odchýlka od baseline~~ ✅ (2026-07-25) — `RHRStatus`, rovnaký
+   tvar ako HRVStatus (denný medián RestingHeartRate vs 7d/28d baseline,
+   28d preferované, fallback na 7d), ale s vlastným `RHRStatusLevel`
+   (`elevated`/`normal`/`suppressed` namiesto `low`/`high` — smer "zlé" je
+   opačný než pri HRV, vyššia RHR je varovný signál) a užším ±5% pásmom
+   (RHR je deň-na-deň stabilnejšia než HRV, širšie pásmo by utlmilo signál).
+   5 testov (normal, žiadne vzorky, nízka confidence, fallback+suppressed,
+   elevated) — všetky zelené spolu s predošlými 20.
+9. Postupne ďalšie metriky: sleep score, readiness kompozita, a napojenie
+   RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
    Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 
 ## Nástroje a workflow
