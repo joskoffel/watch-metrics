@@ -76,7 +76,7 @@ public enum BaselineTracker {
         )
     }
 
-    private static func median(of sortedValues: [Double]) -> Double {
+    static func median(of sortedValues: [Double]) -> Double {
         let count = sortedValues.count
         if count % 2 == 1 {
             return sortedValues[count / 2]
