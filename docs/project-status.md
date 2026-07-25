@@ -131,7 +131,22 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
     `SpO2StatusView.swift`, a nový `MetricsOverviewView.swift` zobrazujúci
     HRV aj SpO2 spolu s farebným indikátorom (zelená/žltá/červená) ako
     hlavná obrazovka appky.
-11. Postupne ďalšie metriky: sleep score, readiness kompozita,
+11. ~~Night picker + dátová korektnosť baseline pre historické noci~~ ✅
+    (2026-07-25) — over overené: `BaselineTracker`/`HRVStatus`/`RHRStatus`/
+    `SpO2Status` boli **už od začiatku referenceDate-aware** (žiadny
+    `Date()` v MetricsCore), zmena nebola v MetricsCore potrebná. Jediná
+    "teraz" závislosť bola v app-layer `HRVIntegration`/`SpO2Integration`
+    (`let now = Date()`), tam pridaný `referenceDate: Date = Date()`
+    parameter do `run()`/`computeXStatus()`. `MetricsOverviewView` má
+    Digital Crown wheel Picker (posledných 14 nocí) — zvolený pred List+
+    NavigationLink, lebo požiadavka bola "táto istá obrazovka sa prekreslí"
+    pre zvolenú noc, nie presun na nový screen; wheel Picker je štandardný
+    watchOS vzor pre výber z malej množiny hodnôt na jednej obrazovke.
+    Loading state (`isLoading`), cancellation guard (`Task.isCancelled`)
+    proti rýchlemu prescrollovaniu prepisujúcemu novšie dáta staršími,
+    "Medián za noc" label a "Noc D.M.–D.M." rozsah pridané do
+    HRVStatusView/SpO2StatusView/MetricsOverviewView.
+12. Postupne ďalšie metriky: sleep score, readiness kompozita,
     a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
     Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 
