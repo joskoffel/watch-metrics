@@ -146,7 +146,28 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
     proti rýchlemu prescrollovaniu prepisujúcemu novšie dáta staršími,
     "Medián za noc" label a "Noc D.M.–D.M." rozsah pridané do
     HRVStatusView/SpO2StatusView/MetricsOverviewView.
-12. Postupne ďalšie metriky: sleep score, readiness kompozita,
+12. ~~UI polish (HealthKitDiagnostics scaffold)~~ ✅ (2026-07-25) — čisto
+    vizuálny beh, žiadna zmena v Sources/MetricsCore. `AppTheme.swift`
+    (indigo/teal paleta z app ikony, oddelené traffic-light farby pre
+    normal/low/critical) a `MetricCard.swift` (zdieľaná karta s pevnou
+    výškou obsahu, aby loading/empty/plný stav nemenili layout — appka
+    "neskáče"). HRV/SpO2 teraz card-based, SF Symbols (`waveform.path.ecg`,
+    `drop.fill` — nie `lungs.fill`, ten sedí skôr na budúcu dychovú
+    frekvenciu M12), animovaná farba indikátora pri zmene levelu, tichý
+    pulzujúci skeleton pri loadingu (nie spinner). Night picker prerobený
+    z wheel Picker (zaberal primárny priestor) na kompaktný "‹ label ›"
+    stepper, nech sú obe karty viditeľné at-a-glance bez scrollovania.
+    **Vedľajší nález**: build zlyhával na "does not contain a scheme
+    named HealthKitDiagnostics" — príčina: `xcuserdata/.../
+    xcschememanagement.plist` malo `SuppressBuildableAutocreation` pre
+    HealthKitDiagnostics target (asi vedľajší efekt manuálnej úpravy scheme
+    v predošlom behu kvôli LLDB/Debug executable). Zmazané (lokálny,
+    gitignored, xcodegen-nespravovaný súbor) — scheme sa teraz opäť
+    auto-vytvára, ale **bez uloženého .xcscheme súboru**, takže "Debug
+    executable" je na Xcode default (zapnuté), nie explicitne vypnuté ako
+    predtým — ak sa LLDB symbolikačný problém vráti, treba to znova vypnúť
+    v Xcode GUI (Edit Scheme → Run → Info).
+13. Postupne ďalšie metriky: sleep score, readiness kompozita,
     a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
     Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 
