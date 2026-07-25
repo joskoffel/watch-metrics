@@ -1,22 +1,20 @@
 import SwiftUI
 import MetricsCore
 
-/// First real end-to-end HRV display: HealthKit samples -> MetricsCore's
-/// HRVStatus -> screen. Distinct from DiagnosticsView (Gate G0.2's raw
-/// HKHeartbeatSeriesQuery check), which stays as-is for future gate checks.
-struct HRVStatusView: View {
-    @State private var integration = HRVIntegration()
+/// Real end-to-end SpO2 display, same shape as HRVStatusView.
+struct SpO2StatusView: View {
+    @State private var integration = SpO2Integration()
 
     var body: some View {
         VStack(spacing: 8) {
-            Text("HRV")
+            Text("SpO2")
                 .font(.headline)
-            if let status = integration.hrvStatus {
+            if let status = integration.spo2Status {
                 HStack(spacing: 6) {
                     Circle()
                         .fill(colorForLevel(status.level))
                         .frame(width: 12, height: 12)
-                    Text("\(String(format: "%.1f", status.value)) ms")
+                    Text("\(String(format: "%.1f", status.value))%")
                         .font(.title2)
                 }
                 Text("Level: \(levelText(status.level))")
@@ -32,22 +30,20 @@ struct HRVStatusView: View {
         }
     }
 
-    /// Same green/yellow/red pattern as SpO2StatusView. HRV has no
-    /// "critical" tier — both `.low` (below baseline) and `.high` (notable
-    /// increase) map to yellow, since neither is the severe/actionable
-    /// signal that SpO2's `.critical` is.
-    private func colorForLevel(_ level: HRVStatusLevel) -> Color {
+    /// Same green/yellow/red pattern as HRVStatusView.
+    private func colorForLevel(_ level: SpO2StatusLevel) -> Color {
         switch level {
         case .normal: .green
-        case .low, .high: .yellow
+        case .low: .yellow
+        case .critical: .red
         }
     }
 
-    private func levelText(_ level: HRVStatusLevel) -> String {
+    private func levelText(_ level: SpO2StatusLevel) -> String {
         switch level {
-        case .low: "Low"
         case .normal: "Normal"
-        case .high: "High"
+        case .low: "Low"
+        case .critical: "Critical"
         }
     }
 
