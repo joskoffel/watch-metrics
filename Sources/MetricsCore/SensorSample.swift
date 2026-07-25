@@ -7,12 +7,14 @@ public struct SensorSample: Codable {
         case heartRateVariabilitySDNN
         case restingHeartRate
         case sleepingWristTemperature
+        case oxygenSaturation
     }
 
     public enum Unit: String, Codable {
         case milliseconds
         case beatsPerMinute
         case degreesCelsius
+        case percent
     }
 
     public let kind: Kind
