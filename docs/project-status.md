@@ -1,6 +1,6 @@
 [# Project status — watch-metrics
 
-Posledná aktualizácia: 2026-07-23
+Posledná aktualizácia: 2026-07-25
 
 ## Čo je to
 
@@ -98,9 +98,17 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
    (RHR je deň-na-deň stabilnejšia než HRV, širšie pásmo by utlmilo signál).
    5 testov (normal, žiadne vzorky, nízka confidence, fallback+suppressed,
    elevated) — všetky zelené spolu s predošlými 20.
-9. Postupne ďalšie metriky: sleep score, readiness kompozita, a napojenie
-   RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
-   Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
+9. ~~Ranný end-to-end HRV test na reálnom zariadení~~ ✅ (2026-07-25) — po
+   nočnom spánku appka (HealthKitDiagnostics/HRVStatusView) ukázala
+   **60.6 ms, level normal, confidence low** na Apple Watch Ultra 3.
+   Potvrdzuje to, že celý pipeline HealthKit → HRVIntegration →
+   MetricsCore (BaselineTracker + HRVStatus) → UI funguje end-to-end na
+   reálnom zariadení, vrátane confidence signálu pre riedke ranné dáta —
+   nízka confidence pri malom počte nočných vzoriek je očakávané správanie
+   BaselineTracker, nie bug.
+10. Postupne ďalšie metriky: SpO2 (M14), sleep score, readiness kompozita,
+    a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
+    Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 
 ## Nástroje a workflow
 
