@@ -34,6 +34,15 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
   keďže MetricsCore nesmie importovať HealthKit).
 - Sources/MetricsCore je čistý Swift Package: nesmie importovať HealthKit,
   CoreLocation ani SwiftUI. Testy pred implementáciou (TDD).
+- **SpO2 (M14) používa absolútne klinické hranice, nie baseline-relatívny
+  vzor ako HRV (±10%) a RHR (±5%).** SpO2 má populačne platnú klinickú
+  hranicu (≥95% normal, 90-94.9% low, <90% critical — klinický konsenzus,
+  nie heuristika na kalibráciu), takže osobný baseline nie je potrebný na
+  to, aby bol level zmysluplný. Preto aj `SpO2Status.compute` vracia nil
+  LEN keď chýbajú dnešné vzorky — chýbajúci baseline (7d aj 28d) level
+  nepotláča, len zníži confidence na `.low`. `SpO2Status.confidence`
+  NEOVPLYVŇUJE dôveryhodnosť `level` — budúca readiness/composite logika
+  to nesmie použiť na potláčanie `.critical`/`.low` SpO2 hodnôt.
 
 ## Stav repozitára
 
@@ -106,7 +115,23 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
    reálnom zariadení, vrátane confidence signálu pre riedke ranné dáta —
    nízka confidence pri malom počte nočných vzoriek je očakávané správanie
    BaselineTracker, nie bug.
-10. Postupne ďalšie metriky: SpO2 (M14), sleep score, readiness kompozita,
+10. ~~SpO2 (M14)~~ ✅ (2026-07-25) — `SpO2Status` v MetricsCore: level z
+    **absolútnych klinických hraníc** (≥95% normal, 90–94.9% low, <90%
+    critical), NIE relatívne k baseline (na rozdiel od HRV/RHR — SpO2 má
+    populačne platnú klinickú hranicu, HRV/RHR nemá). Zámerne sa odchyľuje
+    od HRV/RHR nil-handling vzoru: vracia nil LEN keď chýbajú dnešné SpO2
+    vzorky, chýbajúci baseline confidence len zníži na `.low`, level sa
+    počíta vždy. `confidence` tu neovplyvňuje dôveryhodnosť `level`
+    klasifikácie (doc-comment v kóde) — budúca readiness logika to nesmie
+    použiť na potláčanie `.critical`/`.low`. 10 testov (8 pôvodných +
+    2 symetrické boundary: 94.9%→low, 89.9%→critical), všetky zelené
+    spolu s predošlými 25 (35 spolu). V `HealthKitDiagnostics/`:
+    `SpO2Integration.swift` (rovnaký vzor ako HRVIntegration, pozor na
+    `HKUnit.percent()` vracajúci zlomok 0.0–1.0, nie 0–100 — treba ×100),
+    `SpO2StatusView.swift`, a nový `MetricsOverviewView.swift` zobrazujúci
+    HRV aj SpO2 spolu s farebným indikátorom (zelená/žltá/červená) ako
+    hlavná obrazovka appky.
+11. Postupne ďalšie metriky: sleep score, readiness kompozita,
     a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
     Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 
