@@ -3,13 +3,20 @@ import MetricsCore
 
 /// Real end-to-end SpO2 display, same shape as HRVStatusView.
 struct SpO2StatusView: View {
+    let referenceDate: Date
     @State private var integration = SpO2Integration()
+
+    init(referenceDate: Date = Date()) {
+        self.referenceDate = referenceDate
+    }
 
     var body: some View {
         VStack(spacing: 8) {
             Text("SpO2")
                 .font(.headline)
-            if let status = integration.spo2Status {
+            if integration.isLoading {
+                ProgressView()
+            } else if let status = integration.spo2Status {
                 HStack(spacing: 6) {
                     Circle()
                         .fill(colorForLevel(status.level))
@@ -17,6 +24,9 @@ struct SpO2StatusView: View {
                     Text("\(String(format: "%.1f", status.value))%")
                         .font(.title2)
                 }
+                Text("Medián za noc")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 Text("Level: \(levelText(status.level))")
                 Text("Confidence: \(confidenceText(status.confidence))")
             } else {
@@ -25,8 +35,8 @@ struct SpO2StatusView: View {
             }
         }
         .padding()
-        .task {
-            await integration.run()
+        .task(id: referenceDate) {
+            await integration.run(referenceDate: referenceDate)
         }
     }
 

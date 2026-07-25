@@ -5,13 +5,20 @@ import MetricsCore
 /// HRVStatus -> screen. Distinct from DiagnosticsView (Gate G0.2's raw
 /// HKHeartbeatSeriesQuery check), which stays as-is for future gate checks.
 struct HRVStatusView: View {
+    let referenceDate: Date
     @State private var integration = HRVIntegration()
+
+    init(referenceDate: Date = Date()) {
+        self.referenceDate = referenceDate
+    }
 
     var body: some View {
         VStack(spacing: 8) {
             Text("HRV")
                 .font(.headline)
-            if let status = integration.hrvStatus {
+            if integration.isLoading {
+                ProgressView()
+            } else if let status = integration.hrvStatus {
                 HStack(spacing: 6) {
                     Circle()
                         .fill(colorForLevel(status.level))
@@ -19,6 +26,9 @@ struct HRVStatusView: View {
                     Text("\(String(format: "%.1f", status.value)) ms")
                         .font(.title2)
                 }
+                Text("Medián za noc")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 Text("Level: \(levelText(status.level))")
                 Text("Confidence: \(confidenceText(status.confidence))")
             } else {
@@ -27,8 +37,11 @@ struct HRVStatusView: View {
             }
         }
         .padding()
-        .task {
-            await integration.run()
+        // .task(id:) cancels the in-flight query and starts a fresh one
+        // whenever referenceDate changes (e.g. scrolling the night picker),
+        // instead of stacking overlapping HealthKit queries.
+        .task(id: referenceDate) {
+            await integration.run(referenceDate: referenceDate)
         }
     }
 

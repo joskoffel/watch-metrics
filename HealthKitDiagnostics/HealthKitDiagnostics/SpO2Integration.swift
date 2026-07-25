@@ -11,8 +11,15 @@ final class SpO2Integration {
 
     private(set) var spo2Status: SpO2Status?
     private(set) var statusText = "Not started"
+    private(set) var isLoading = false
 
-    func run() async {
+    /// `referenceDate` picks which night to show (defaults to tonight) —
+    /// see `HRVIntegration.run(referenceDate:)` for why this is the only
+    /// place a "now" dependency exists in this pipeline.
+    func run(referenceDate: Date = Date()) async {
+        isLoading = true
+        defer { isLoading = false }
+
         guard HKHealthStore.isHealthDataAvailable() else {
             statusText = "HealthKit not available on this device"
             return
@@ -25,7 +32,7 @@ final class SpO2Integration {
             return
         }
 
-        await computeSpO2Status()
+        await computeSpO2Status(referenceDate: referenceDate)
     }
 
     private func requestAuthorization() async throws {
@@ -42,17 +49,19 @@ final class SpO2Integration {
         }
     }
 
-    private func computeSpO2Status() async {
+    private func computeSpO2Status(referenceDate: Date) async {
         let calendar = Calendar.current
-        let now = Date()
-        let todayStart = calendar.startOfDay(for: now)
-        guard let windowStart = calendar.date(byAdding: .day, value: -28, to: todayStart) else {
+        let nightStart = calendar.startOfDay(for: referenceDate)
+        guard let nightEnd = calendar.date(byAdding: .day, value: 1, to: nightStart),
+              let windowStart = calendar.date(byAdding: .day, value: -28, to: nightStart) else {
             statusText = "Could not compute the 28-day lookback range"
             return
         }
 
         do {
-            let samples = try await fetchSpO2Samples(from: windowStart, to: now)
+            let samples = try await fetchSpO2Samples(from: windowStart, to: nightEnd)
+            guard !Task.isCancelled else { return }
+
             guard !samples.isEmpty else {
                 statusText = "Nedostatok dát — žiadne SpO2 vzorky za posledných 28 dní"
                 spo2Status = nil
@@ -64,12 +73,12 @@ final class SpO2Integration {
                 DailyMetricValue(date: day, value: Self.median(of: daySamples.map(\.value)))
             }
 
-            let baseline = BaselineTracker.baseline(from: dailyValues, asOf: todayStart)
-            let todaysSamples = samplesByDay[todayStart] ?? []
+            let baseline = BaselineTracker.baseline(from: dailyValues, asOf: nightStart)
+            let nightSamples = samplesByDay[nightStart] ?? []
 
-            guard let status = SpO2Status.compute(from: todaysSamples, baseline: baseline) else {
+            guard let status = SpO2Status.compute(from: nightSamples, baseline: baseline) else {
                 spo2Status = nil
-                statusText = "Nedostatok dát pre dnešný deň — žiadna SpO2 vzorka dnes"
+                statusText = "Nedostatok dát pre túto noc"
                 return
             }
 

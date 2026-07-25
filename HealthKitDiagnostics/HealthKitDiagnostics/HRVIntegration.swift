@@ -15,8 +15,17 @@ final class HRVIntegration {
 
     private(set) var hrvStatus: HRVStatus?
     private(set) var statusText = "Not started"
+    private(set) var isLoading = false
 
-    func run() async {
+    /// `referenceDate` picks which night to show (defaults to tonight).
+    /// Every date computation below already ran through `BaselineTracker`'s
+    /// existing `asOf:` parameter — MetricsCore never called `Date()`
+    /// internally. The only real "now" dependency was here, so this is
+    /// where a selected historical night gets threaded through.
+    func run(referenceDate: Date = Date()) async {
+        isLoading = true
+        defer { isLoading = false }
+
         guard HKHealthStore.isHealthDataAvailable() else {
             statusText = "HealthKit not available on this device"
             return
@@ -29,7 +38,7 @@ final class HRVIntegration {
             return
         }
 
-        await computeHRVStatus()
+        await computeHRVStatus(referenceDate: referenceDate)
     }
 
     private func requestAuthorization() async throws {
@@ -46,17 +55,19 @@ final class HRVIntegration {
         }
     }
 
-    private func computeHRVStatus() async {
+    private func computeHRVStatus(referenceDate: Date) async {
         let calendar = Calendar.current
-        let now = Date()
-        let todayStart = calendar.startOfDay(for: now)
-        guard let windowStart = calendar.date(byAdding: .day, value: -28, to: todayStart) else {
+        let nightStart = calendar.startOfDay(for: referenceDate)
+        guard let nightEnd = calendar.date(byAdding: .day, value: 1, to: nightStart),
+              let windowStart = calendar.date(byAdding: .day, value: -28, to: nightStart) else {
             statusText = "Could not compute the 28-day lookback range"
             return
         }
 
         do {
-            let samples = try await fetchSDNNSamples(from: windowStart, to: now)
+            let samples = try await fetchSDNNSamples(from: windowStart, to: nightEnd)
+            guard !Task.isCancelled else { return }
+
             guard !samples.isEmpty else {
                 statusText = "Nedostatok dát — žiadne SDNN vzorky za posledných 28 dní"
                 hrvStatus = nil
@@ -68,13 +79,13 @@ final class HRVIntegration {
                 DailyMetricValue(date: day, value: Self.median(of: daySamples.map(\.value)))
             }
 
-            let baseline = BaselineTracker.baseline(from: dailyValues, asOf: todayStart)
-            let todaysSamples = samplesByDay[todayStart] ?? []
+            let baseline = BaselineTracker.baseline(from: dailyValues, asOf: nightStart)
+            let nightSamples = samplesByDay[nightStart] ?? []
 
-            guard let status = HRVStatus.compute(from: todaysSamples, baseline: baseline) else {
+            guard let status = HRVStatus.compute(from: nightSamples, baseline: baseline) else {
                 hrvStatus = nil
-                statusText = todaysSamples.isEmpty
-                    ? "Nedostatok dát pre dnešný deň — žiadna SDNN vzorka dnes"
+                statusText = nightSamples.isEmpty
+                    ? "Nedostatok dát pre túto noc"
                     : "Baseline zatiaľ nedostupný — chýba história za 7d aj 28d"
                 return
             }
