@@ -13,32 +13,40 @@ struct HRVStatusView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text("HRV")
-                .font(.headline)
-            if integration.isLoading {
-                ProgressView()
-            } else if let status = integration.hrvStatus {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(colorForLevel(status.level))
-                        .frame(width: 12, height: 12)
-                    Text("\(String(format: "%.1f", status.value)) ms")
-                        .font(.title2)
+        MetricCard(
+            title: "HRV",
+            symbolName: "waveform.path.ecg",
+            isLoading: integration.isLoading,
+            emptyMessage: integration.hrvStatus == nil ? integration.statusText : nil
+        ) {
+            if let status = integration.hrvStatus {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Circle()
+                            .fill(colorForLevel(status.level))
+                            .frame(width: 10, height: 10)
+                            .animation(.easeInOut(duration: 0.2), value: status.level)
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Text(String(format: "%.1f", status.value))
+                                .font(.title2.weight(.semibold))
+                            Text("ms")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Text("Medián za noc")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("\(levelText(status.level)) · confidence \(confidenceText(status.confidence))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
-                Text("Medián za noc")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text("Level: \(levelText(status.level))")
-                Text("Confidence: \(confidenceText(status.confidence))")
-            } else {
-                Text(integration.statusText)
-                    .multilineTextAlignment(.center)
+                .transition(.opacity)
             }
         }
-        .padding()
+        .animation(.easeInOut(duration: 0.25), value: integration.hrvStatus)
         // .task(id:) cancels the in-flight query and starts a fresh one
-        // whenever referenceDate changes (e.g. scrolling the night picker),
+        // whenever referenceDate changes (e.g. stepping the night picker),
         // instead of stacking overlapping HealthKit queries.
         .task(id: referenceDate) {
             await integration.run(referenceDate: referenceDate)
@@ -51,8 +59,8 @@ struct HRVStatusView: View {
     /// signal that SpO2's `.critical` is.
     private func colorForLevel(_ level: HRVStatusLevel) -> Color {
         switch level {
-        case .normal: .green
-        case .low, .high: .yellow
+        case .normal: AppTheme.statusNormal
+        case .low, .high: AppTheme.statusLow
         }
     }
 

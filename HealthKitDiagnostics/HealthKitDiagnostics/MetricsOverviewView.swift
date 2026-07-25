@@ -1,18 +1,18 @@
 import SwiftUI
 
-/// Main diagnostic screen: a night picker, plus HRV and SpO2 together for
-/// whichever night is selected, each with its own HealthKit query/
-/// authorization (via HRVStatusView/SpO2StatusView), same green/yellow/red
-/// status-color pattern for both.
+/// Main diagnostic screen: a compact night stepper, plus HRV and SpO2 as
+/// separate cards for whichever night is selected, each with its own
+/// HealthKit query/authorization (via HRVStatusView/SpO2StatusView).
 ///
-/// Night selection uses a Digital Crown-scrollable wheel Picker, embedded
-/// directly in this view, rather than a List + NavigationLink to a separate
-/// per-night screen. A NavigationLink push would mean HRV/SpO2 for a
-/// historical night live on a *different* screen than "today" — but the
-/// requirement is that this same overview re-renders in place for whichever
-/// night is selected, and a wheel Picker is the standard watchOS idiom for
-/// choosing one value from a small enumerable set (here: the last 14
-/// nights) without leaving the current screen.
+/// Night selection is a compact "‹ label ›" stepper, not a wheel Picker or
+/// a List + NavigationLink: both cards need to be visible at a glance right
+/// after opening the app, without scrolling past a big control first — a
+/// full-height wheel Picker would eat the vertical space the cards need on
+/// a watch screen. A NavigationLink push was also ruled out since the
+/// requirement is that this same screen re-renders in place for whichever
+/// night is picked, not a separate per-night page. The stepper still keeps
+/// everything on one screen and stays reachable via the same tap target
+/// pattern watchOS uses elsewhere for compact value adjustment.
 struct MetricsOverviewView: View {
     private let nightCount = 14
 
@@ -25,24 +25,53 @@ struct MetricsOverviewView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                Picker("Noc", selection: $selectedNightOffset) {
-                    ForEach(0..<nightCount, id: \.self) { offset in
-                        Text(pickerLabel(forOffset: offset)).tag(offset)
-                    }
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 60)
-
-                Text(nightRangeLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
+            VStack(spacing: 10) {
+                nightStepper
                 HRVStatusView(referenceDate: referenceDate)
-                Divider()
                 SpO2StatusView(referenceDate: referenceDate)
             }
+            .padding(.horizontal, 6)
+            .padding(.top, 2)
         }
+        .background(AppTheme.background.ignoresSafeArea())
+    }
+
+    private var nightStepper: some View {
+        HStack {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedNightOffset = min(selectedNightOffset + 1, nightCount - 1)
+                }
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .disabled(selectedNightOffset >= nightCount - 1)
+
+            Spacer(minLength: 4)
+
+            VStack(spacing: 0) {
+                Text(pickerLabel(forOffset: selectedNightOffset))
+                    .font(.footnote.weight(.semibold))
+                Text(nightRangeLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .contentTransition(.opacity)
+
+            Spacer(minLength: 4)
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedNightOffset = max(selectedNightOffset - 1, 0)
+                }
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .disabled(selectedNightOffset <= 0)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(AppTheme.accent)
+        .animation(.easeInOut(duration: 0.2), value: selectedNightOffset)
     }
 
     private func pickerLabel(forOffset offset: Int) -> String {
@@ -65,7 +94,8 @@ struct MetricsOverviewView: View {
 
     /// "Noc {previous day}.–{selected day}." — makes explicit that the
     /// displayed values are a nightly summary spanning two calendar dates,
-    /// not a live "right now" reading.
+    /// not a live "right now" reading. Shown once here rather than
+    /// repeated on both cards below, since it applies to both equally.
     private var nightRangeLabel: String {
         let calendar = Calendar.current
         let nightEnd = calendar.startOfDay(for: referenceDate)
