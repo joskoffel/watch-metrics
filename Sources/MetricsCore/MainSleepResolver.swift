@@ -1,7 +1,8 @@
 import Foundation
 
-/// Picks tonight's "main sleep" — the longest session that finished inside
-/// the night window — out of all sessions `SleepSessionBuilder` produced.
+/// Picks tonight's "main sleep" — the session with the most actual asleep
+/// time that finished inside the night window — out of all sessions
+/// `SleepSessionBuilder` produced.
 public enum MainSleepResolver {
     /// - Parameters:
     ///   - sessions: candidate sessions, any night.
@@ -19,9 +20,9 @@ public enum MainSleepResolver {
     ) -> SleepSession? {
         let candidates = sessions
             .filter { $0.end >= window.start && $0.end <= window.end }
-            .filter { $0.duration >= minDuration }
+            .filter { $0.asleepDuration >= minDuration }
 
-        guard let longest = candidates.max(by: { $0.duration < $1.duration }) else {
+        guard let longest = candidates.max(by: { $0.asleepDuration < $1.asleepDuration }) else {
             return nil
         }
 

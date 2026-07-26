@@ -29,19 +29,26 @@ public struct SleepSample: Equatable {
 public struct SleepSession: Equatable {
     public let start: Date
     public let end: Date
+    /// Sum of the unique time covered by asleep-stage samples. Unlike the
+    /// session bounds, this excludes awake/in-bed gaps and never double-counts
+    /// overlapping asleep samples.
+    public let asleepDuration: TimeInterval
 
-    public init(start: Date, end: Date) {
+    public init(start: Date, end: Date, asleepDuration: TimeInterval) {
         self.start = start
         self.end = end
+        self.asleepDuration = asleepDuration
     }
 
-    public var duration: TimeInterval { end.timeIntervalSince(start) }
+    /// Wall-clock span from the first asleep sample to the last. This is a
+    /// boundary measurement, not the amount of time asleep.
+    public var elapsedDuration: TimeInterval { end.timeIntervalSince(start) }
 }
 
 /// Turns raw sleep-stage segments into merged sleep sessions.
 ///
-/// `awake`/`inBed` segments never contribute to a session's duration; they
-/// only matter as gaps between asleep segments, and a gap longer than
+/// `awake`/`inBed` segments never contribute to `asleepDuration`; they only
+/// matter as gaps between asleep segments, and a gap longer than
 /// `gapTolerance` splits what would otherwise be one session into two.
 public enum SleepSessionBuilder {
     private static let sleepStages: Set<SleepSample.Stage> = [
@@ -54,23 +61,38 @@ public enum SleepSessionBuilder {
     ) -> [SleepSession] {
         let sleepSamples = samples
             .filter { sleepStages.contains($0.stage) }
+            .filter { $0.end > $0.start }
             .sorted { $0.start < $1.start }
 
         guard var currentStart = sleepSamples.first?.start else { return [] }
         var currentEnd = sleepSamples[0].end
+        var currentAsleepDuration = currentEnd.timeIntervalSince(currentStart)
 
         var sessions: [SleepSession] = []
 
         for sample in sleepSamples.dropFirst() {
             if sample.start.timeIntervalSince(currentEnd) <= gapTolerance {
+                let uncoveredStart = max(sample.start, currentEnd)
+                if sample.end > uncoveredStart {
+                    currentAsleepDuration += sample.end.timeIntervalSince(uncoveredStart)
+                }
                 currentEnd = max(currentEnd, sample.end)
             } else {
-                sessions.append(SleepSession(start: currentStart, end: currentEnd))
+                sessions.append(SleepSession(
+                    start: currentStart,
+                    end: currentEnd,
+                    asleepDuration: currentAsleepDuration
+                ))
                 currentStart = sample.start
                 currentEnd = sample.end
+                currentAsleepDuration = sample.end.timeIntervalSince(sample.start)
             }
         }
-        sessions.append(SleepSession(start: currentStart, end: currentEnd))
+        sessions.append(SleepSession(
+            start: currentStart,
+            end: currentEnd,
+            asleepDuration: currentAsleepDuration
+        ))
 
         return sessions
     }

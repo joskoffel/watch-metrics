@@ -52,7 +52,7 @@ public enum BriefComposer {
     }
 
     private static func sleepLine(for session: SleepSession) -> BriefLine {
-        let totalMinutes = Int(session.duration / 60)
+        let totalMinutes = Int(session.asleepDuration / 60)
         let value = "\(totalMinutes / 60) h \(totalMinutes % 60) min"
         return BriefLine(label: "Spánok", value: value, qualifier: nil, isProvisional: false)
     }

@@ -7,7 +7,11 @@ private func t(_ isoDate: String) -> Date {
 }
 
 private func sevenHoursTwelveMinutesSleep() -> SleepSession {
-    SleepSession(start: t("2026-07-15T23:00:00Z"), end: t("2026-07-16T06:12:00Z"))
+    SleepSession(
+        start: t("2026-07-15T23:00:00Z"),
+        end: t("2026-07-16T06:12:00Z"),
+        asleepDuration: 7 * 60 * 60 + 12 * 60
+    )
 }
 
 @Test func briefComposerIncludesAllLinesWhenAllMetricsPresent() {
@@ -26,6 +30,23 @@ private func sevenHoursTwelveMinutesSleep() -> SleepSession {
     #expect(content.lines[1].label == "HRV")
     #expect(content.lines[2].label == "Pokojový pulz")
     #expect(content.lines[3].label == "SpO₂")
+}
+
+@Test func briefComposerDisplaysActualAsleepDurationInsteadOfSessionBounds() {
+    let summary = NightSummary(
+        sleep: SleepSession(
+            start: t("2026-07-15T22:00:00Z"),
+            end: t("2026-07-16T06:00:00Z"),
+            asleepDuration: 6.5 * 60 * 60
+        ),
+        hrv: nil,
+        rhr: nil,
+        spo2: nil
+    )
+
+    let content = BriefComposer.compose(from: summary)
+
+    #expect(content.lines[0].value == "6 h 30 min")
 }
 
 @Test func briefComposerOmitsMissingMetric() {

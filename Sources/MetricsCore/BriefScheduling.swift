@@ -1,34 +1,50 @@
 import Foundation
 
 /// When to arm the next `WKApplication.scheduleBackgroundRefresh` call,
-/// given the most recent `BriefDeliveryPolicy` decision. Kept separate from
-/// `BriefDeliveryPolicy` itself since it answers a different question ("when
-/// should the *next background task* fire") from the policy's ("what should
-/// happen *right now*").
+/// given the complete result of the most recent attempt. Kept separate from
+/// `BriefDeliveryPolicy` because notification delivery can fail after a
+/// `.deliver` decision and must still schedule a retry.
 public enum BriefScheduling {
     /// - Parameters:
     ///   - now: current time.
     ///   - calendar: must carry the local time zone, same DST-safety
     ///     requirement as `BriefDeliveryPolicy.evaluate`.
-    ///   - decision: the result of the most recent `BriefDeliveryPolicy`
-    ///     evaluation, or `nil` if there isn't one yet (e.g. scheduling the
-    ///     very first background task at app launch).
-    public static func nextRefreshDate(now: Date, calendar: Calendar, decision: BriefDecision?) -> Date {
-        switch decision {
-        case .retry(let after):
-            return now.addingTimeInterval(after)
-        case .deliver, .skip:
+    ///   - result: the result of the complete most recent attempt, or `nil`
+    ///     if there isn't one yet (e.g. scheduling the first background task
+    ///     at app launch).
+    public static func nextRefreshDate(now: Date, calendar: Calendar, result: BriefRunResult?) -> Date {
+        switch result {
+        case .policyRetry(let after), .notificationFailed(let after):
+            return retryDate(now: now, calendar: calendar, after: after)
+        case .delivered, .policySkip:
             // Today's cycle is over (delivered, or given up on for today) —
             // nothing to check again until tomorrow's earliest possible
             // delivery; waking any earlier would just retry into the same
             // "no main sleep yet" or "already delivered" result.
             return tomorrowsEarliestDelivery(from: now, calendar: calendar)
         case nil:
-            // No prior decision to react to — check again soon and let that
+            // No prior result to react to — check again soon and let that
             // first real evaluation drive the retry ladder from there,
             // rather than trying to guess today-vs-tomorrow here.
             return now.addingTimeInterval(BriefConstants.retryInterval)
         }
+    }
+
+    private static func retryDate(now: Date, calendar: Calendar, after: TimeInterval) -> Date {
+        let proposed = now.addingTimeInterval(after)
+        let today = calendar.startOfDay(for: now)
+        guard let cutoff = calendar.date(
+            bySettingHour: BriefConstants.latestDeliveryHour,
+            minute: BriefConstants.latestDeliveryMinute,
+            second: 0,
+            of: today
+        ) else {
+            return proposed
+        }
+
+        return proposed <= cutoff
+            ? proposed
+            : tomorrowsEarliestDelivery(from: now, calendar: calendar)
     }
 
     private static func tomorrowsEarliestDelivery(from now: Date, calendar: Calendar) -> Date {

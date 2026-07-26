@@ -31,7 +31,7 @@ struct BriefDebugPanel: View {
 
     private var triggerButton: some View {
         Button {
-            Task { await runner.runNow() }
+            Task { _ = await runner.runDebug() }
         } label: {
             if runner.isLoading {
                 ProgressView()

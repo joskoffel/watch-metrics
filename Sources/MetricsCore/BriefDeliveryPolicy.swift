@@ -2,12 +2,8 @@ import Foundation
 
 /// Why the morning brief was not delivered.
 ///
-/// `.pastCutoff` is not produced by `BriefDeliveryPolicy.evaluate` itself —
-/// every path past the delivery cutoff either resolves to `.skip(.noMainSleep)`
-/// or still delivers a partial summary (see step 7 of the policy). It exists
-/// for the shell layer (e.g. a scheduler deciding whether a computed retry
-/// time would land after the window has already closed, so it isn't worth
-/// arming another background task for it).
+/// `.pastCutoff` is produced whenever evaluation happens after the local
+/// delivery window has closed. Exactly at the cutoff is still eligible.
 public enum SkipReason: Equatable {
     case alreadyDelivered
     case noMainSleep
@@ -50,7 +46,7 @@ public enum BriefDeliveryPolicy {
         hrv: HRVStatus?,
         rhr: RHRStatus?,
         spo2: SpO2Status?,
-        isAlreadyDelivered: @Sendable (Date) -> Bool
+        isAlreadyDelivered: (Date) -> Bool
     ) -> BriefDecision {
         let today = calendar.startOfDay(for: now)
         guard
@@ -72,6 +68,10 @@ public enum BriefDeliveryPolicy {
             )
         else {
             return .retry(after: BriefConstants.retryInterval)
+        }
+
+        guard now <= latestDelivery else {
+            return .skip(.pastCutoff)
         }
 
         let window = DateInterval(start: windowStart, end: max(windowStart, now))

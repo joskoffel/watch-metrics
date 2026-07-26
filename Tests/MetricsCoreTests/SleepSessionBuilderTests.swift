@@ -32,6 +32,21 @@ private func t(_ isoDate: String) -> Date {
     #expect(sessions.count == 1)
     #expect(sessions.first?.start == t("2026-07-16T22:00:00Z"))
     #expect(sessions.first?.end == t("2026-07-17T01:00:00Z"))
+    #expect(sessions.first?.asleepDuration == 2.5 * 60 * 60)
+}
+
+@Test func sleepSessionBuilderCountsOverlappingAsleepSegmentsOnlyOnce() {
+    let samples = [
+        SleepSample(start: t("2026-07-16T22:00:00Z"), end: t("2026-07-17T00:00:00Z"), stage: .asleepCore),
+        SleepSample(start: t("2026-07-16T23:00:00Z"), end: t("2026-07-17T01:00:00Z"), stage: .asleepREM)
+    ]
+
+    let sessions = SleepSessionBuilder.build(from: samples)
+
+    #expect(sessions.count == 1)
+    #expect(sessions.first?.start == t("2026-07-16T22:00:00Z"))
+    #expect(sessions.first?.end == t("2026-07-17T01:00:00Z"))
+    #expect(abs((sessions.first?.asleepDuration ?? 0) - 3 * 60 * 60) < 0.001)
 }
 
 @Test func sleepSessionBuilderLongAwakeGapSplitsIntoTwoSessions() {
@@ -44,8 +59,16 @@ private func t(_ isoDate: String) -> Date {
     let sessions = SleepSessionBuilder.build(from: samples)
 
     #expect(sessions.count == 2)
-    #expect(sessions[0] == SleepSession(start: t("2026-07-16T22:00:00Z"), end: t("2026-07-16T23:00:00Z")))
-    #expect(sessions[1] == SleepSession(start: t("2026-07-17T00:30:00Z"), end: t("2026-07-17T02:00:00Z")))
+    #expect(sessions[0] == SleepSession(
+        start: t("2026-07-16T22:00:00Z"),
+        end: t("2026-07-16T23:00:00Z"),
+        asleepDuration: 60 * 60
+    ))
+    #expect(sessions[1] == SleepSession(
+        start: t("2026-07-17T00:30:00Z"),
+        end: t("2026-07-17T02:00:00Z"),
+        asleepDuration: 1.5 * 60 * 60
+    ))
 }
 
 @Test func sleepSessionBuilderExcludesAwakeAndInBedFromDuration() {
@@ -61,6 +84,7 @@ private func t(_ isoDate: String) -> Date {
     #expect(sessions.count == 1)
     #expect(sessions.first?.start == t("2026-07-16T22:15:00Z"))
     #expect(sessions.first?.end == t("2026-07-17T01:00:00Z"))
+    #expect(sessions.first?.asleepDuration == 2.6666666666666665 * 60 * 60)
 }
 
 @Test func sleepSessionBuilderReturnsEmptyForEmptyInput() {

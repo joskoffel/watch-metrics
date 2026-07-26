@@ -4,14 +4,8 @@ import Foundation
 /// sleep already got a delivered brief, keyed as `yyyy-MM-dd` (see the spec
 /// — "kalendárny dátum konca hlavného spánku").
 ///
-/// `hasDelivered`/`markDelivered` take a plain `Date`, not specifically
-/// main sleep's `end`: the upfront dedupe check (`BriefDeliveryPolicy` step
-/// 1) runs *before* main sleep is resolved, so at that point the caller can
-/// only pass `now` (today's date) as a practical stand-in — the two
-/// virtually always land on the same calendar day, since main sleep ends
-/// before the 10:00 cutoff whenever it resolves at all. Once delivery
-/// actually happens, the caller has `main.end` and should pass that
-/// instead, matching the spec's key exactly.
+/// Both the authoritative policy check and the post-notification write use
+/// the resolved main sleep's `end`; `now` is never a dedupe key.
 struct BriefStore {
     private let defaults: UserDefaults
     private static let lastDeliveredDayKey = "BriefStore.lastDeliveredDay"

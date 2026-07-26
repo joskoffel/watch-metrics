@@ -1,6 +1,6 @@
 [# Project status — watch-metrics
 
-Posledná aktualizácia: 2026-07-25
+Posledná aktualizácia: 2026-07-26
 
 ## Čo je to
 
@@ -34,6 +34,13 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
   keďže MetricsCore nesmie importovať HealthKit).
 - Sources/MetricsCore je čistý Swift Package: nesmie importovať HealthKit,
   CoreLocation ani SwiftUI. Testy pred implementáciou (TDD).
+- **Ranný brief používa skutočný čas spánku, nie iba hranice session.**
+  `SleepSession.asleepDuration` je súčet unikátneho času asleep segmentov
+  bez awake/inBed medzier a bez dvojitého započítania overlapov; podľa tejto
+  hodnoty sa vyberá hlavný spánok aj zobrazuje dĺžka. Doručenie je povolené
+  najneskôr presne o 10:00, scheduled beh autoritatívne deduplikuje podľa
+  `mainSleep.end` a scheduling reaguje na výsledok celého pokusu vrátane
+  zlyhania notifikácie, nie iba na čisté `BriefDecision`.
 - **SpO2 (M14) používa absolútne klinické hranice, nie baseline-relatívny
   vzor ako HRV (±10%) a RHR (±5%).** SpO2 má populačne platnú klinickú
   hranicu (≥95% normal, 90-94.9% low, <90% critical — klinický konsenzus,

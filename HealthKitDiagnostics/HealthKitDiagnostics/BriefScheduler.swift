@@ -5,7 +5,7 @@ import WatchKit
 /// Owns the watchOS background-refresh retry ladder (spec D1): arms
 /// `WKApplication.scheduleBackgroundRefresh`, and on each fired task runs
 /// the same pipeline `BriefRunner`/`BriefDebugPanel` use, then reschedules
-/// per `BriefScheduling.nextRefreshDate` based on the resulting decision.
+/// per `BriefScheduling.nextRefreshDate` based on the complete attempt result.
 /// `HKObserverQuery` is deliberately not used here — see D1: "longest
 /// session of the night" can't be known until the night window is over, so
 /// polling at fixed points is the only correct trigger, not an
@@ -23,16 +23,16 @@ enum BriefScheduler {
 
     /// Call from `WKApplicationDelegate.applicationDidFinishLaunching()`.
     static func scheduleInitialRefresh() {
-        scheduleNextRefresh(preferredDate: BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, decision: nil))
+        scheduleNextRefresh(preferredDate: BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, result: nil))
     }
 
     /// Call from `WKApplicationDelegate.handle(_:)` for each
     /// `WKApplicationRefreshBackgroundTask`.
     static func handle(_ task: WKApplicationRefreshBackgroundTask) async {
         let runner = BriefRunner()
-        await runner.runNow()
+        let result = await runner.runScheduled()
 
-        let nextDate = BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, decision: runner.lastDecision)
+        let nextDate = BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, result: result)
         scheduleNextRefresh(preferredDate: nextDate)
 
         task.setTaskCompletedWithSnapshot(false)
