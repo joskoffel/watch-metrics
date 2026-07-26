@@ -14,6 +14,8 @@ targets:
       - path: HealthKitDiagnostics
     dependencies:
       - package: MetricsCore
+      - target: HealthKitDiagnosticsWidgetExtension
+        embed: true
     entitlements:
       path: HealthKitDiagnostics/HealthKitDiagnostics.entitlements
       properties:
@@ -28,6 +30,32 @@ targets:
         INFOPLIST_KEY_NSHealthShareUsageDescription: "Diagnostic tool (Gate G0.2, not the production app): reads HealthKit heartbeat series data to check RR-interval availability for watch-metrics development."
         INFOPLIST_KEY_WKApplication: YES
         INFOPLIST_KEY_WKWatchOnly: YES
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        DEVELOPMENT_TEAM: "XXRA2Z8LT5"
+        CODE_SIGN_STYLE: Automatic
+
+  # Minimal static complication (roadmap section 11): claims a watch-face
+  # slot so the app gets a more generous background-refresh budget for
+  # BriefScheduler — no HealthKit access, no App Group, no live data.
+  HealthKitDiagnosticsWidgetExtension:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: HealthKitDiagnosticsWidget
+    info:
+      path: HealthKitDiagnosticsWidget/Info.plist
+      properties:
+        CFBundleDisplayName: watch-metrics
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.watchmetrics.diagnostics.HealthKitDiagnostics.Widget
+        PRODUCT_NAME: HealthKitDiagnosticsWidgetExtension
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         DEVELOPMENT_TEAM: "XXRA2Z8LT5"
