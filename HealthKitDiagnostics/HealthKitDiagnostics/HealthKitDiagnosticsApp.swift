@@ -1,7 +1,10 @@
 import SwiftUI
+import WatchKit
 
 @main
 struct HealthKitDiagnosticsApp: App {
+    @WKApplicationDelegateAdaptor(BriefAppDelegate.self) private var appDelegate
+
     var body: some Scene {
         WindowGroup {
             TabView {
