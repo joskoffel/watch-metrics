@@ -49,7 +49,7 @@ struct MetricCard<Content: View>: View {
 /// Subtle pulsing placeholder for the loading state — deliberately quiet
 /// (slow opacity pulse, no spinner/motion): watchOS favors calm, cheap
 /// animations for battery life and readability while the wrist is moving.
-private struct PulsingSkeleton: View {
+struct PulsingSkeleton: View {
     @State private var pulse = false
 
     var body: some View {

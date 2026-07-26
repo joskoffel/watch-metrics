@@ -5,14 +5,12 @@ import MetricsCore
 /// deliberately separate: scheduled attempts enforce `BriefStore` dedupe,
 /// while an explicit debug attempt may bypass it for on-demand verification.
 ///
-/// There is no `RHRIntegration` in this diagnostics app yet (M3 was never
-/// wired into the shell), so `rhr` is always `nil` here — `NightSummary`
-/// already treats a missing metric as "omit it", not an error.
 @MainActor
 @Observable
 final class BriefRunner {
     private let sleepIntegration = SleepIntegration()
     private let hrvIntegration = HRVIntegration()
+    private let rhrIntegration = RHRIntegration()
     private let spo2Integration = SpO2Integration()
     private let store = BriefStore()
     private let notifier = BriefNotifier()
@@ -37,6 +35,7 @@ final class BriefRunner {
         let now = Date()
         await sleepIntegration.run(referenceDate: now)
         await hrvIntegration.run(referenceDate: now)
+        await rhrIntegration.run(referenceDate: now)
         await spo2Integration.run(referenceDate: now)
 
         let decision = BriefDeliveryPolicy.evaluate(
@@ -44,7 +43,7 @@ final class BriefRunner {
             calendar: .current,
             sessions: sleepIntegration.sessions,
             hrv: hrvIntegration.hrvStatus,
-            rhr: nil,
+            rhr: rhrIntegration.rhrStatus,
             spo2: spo2Integration.spo2Status,
             isAlreadyDelivered: { [store] mainSleepEnd in
                 enforceDedupe && store.hasDelivered(onDay: mainSleepEnd)

@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct HealthKitDiagnosticsWidgetBundle: WidgetBundle {
+struct WatchMetricsWidgetBundle: WidgetBundle {
     var body: some Widget {
         WatchMetricsComplication()
     }

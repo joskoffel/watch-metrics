@@ -1,0 +1,243 @@
+import Foundation
+import HealthKit
+import MetricsCore
+import UserNotifications
+
+enum DataLoadState: Equatable {
+    case idle
+    case loading
+    case loaded
+    case empty
+    case permissionDenied
+    case failed(String)
+}
+
+enum NotificationAccess: String {
+    case unknown = "Neoverené"
+    case allowed = "Povolené"
+    case denied = "Zakázané"
+}
+
+@MainActor
+@Observable
+final class DailyOverviewStore {
+    private let sleepIntegration = SleepIntegration()
+    private let hrvIntegration = HRVIntegration()
+    private let rhrIntegration = RHRIntegration()
+    private let spo2Integration = SpO2Integration()
+    private let briefStore = BriefStore()
+    private let notifier = BriefNotifier()
+    private let healthStore = HKHealthStore()
+
+    private var loadGeneration = 0
+    private let usesHealthKit: Bool
+
+    private(set) var referenceDate: Date
+    private(set) var snapshot: DailyDashboardSnapshot
+    private(set) var history: [DailyDashboardSnapshot] = []
+    private(set) var hrvHistory: [DatedMetric<HRVStatus>] = []
+    private(set) var rhrHistory: [DatedMetric<RHRStatus>] = []
+    private(set) var spo2History: [DatedMetric<SpO2Status>] = []
+    private(set) var sleepState: DataLoadState = .idle
+    private(set) var hrvState: DataLoadState = .idle
+    private(set) var rhrState: DataLoadState = .idle
+    private(set) var spo2State: DataLoadState = .idle
+    private(set) var notificationAccess: NotificationAccess = .unknown
+    private(set) var notificationTestMessage: String?
+    private(set) var isLoading = false
+
+    init(referenceDate: Date = Date()) {
+        self.referenceDate = referenceDate
+        self.snapshot = DailyDashboardSnapshot(referenceDate: referenceDate)
+        self.usesHealthKit = true
+    }
+
+    init(
+        sample snapshot: DailyDashboardSnapshot,
+        history: [DailyDashboardSnapshot] = [],
+        hrvHistory: [DatedMetric<HRVStatus>] = [],
+        rhrHistory: [DatedMetric<RHRStatus>] = [],
+        spo2History: [DatedMetric<SpO2Status>] = [],
+        states: DataLoadState = .loaded
+    ) {
+        self.referenceDate = snapshot.referenceDate
+        self.snapshot = snapshot
+        self.history = history
+        self.hrvHistory = hrvHistory
+        self.rhrHistory = rhrHistory
+        self.spo2History = spo2History
+        self.sleepState = states
+        self.hrvState = states
+        self.rhrState = states
+        self.spo2State = states
+        self.usesHealthKit = false
+    }
+
+    var dataStatusText: String {
+        if isLoading { return "Načítavam HealthKit…" }
+        switch snapshot.availability {
+        case .complete: return "Dáta sú kompletné"
+        case .partial(let available, let total): return "\(available) z \(total) metrík dostupné"
+        case .empty: return "Pre túto noc nie sú dáta"
+        }
+    }
+
+    var morningBriefText: String {
+        guard let sleep = snapshot.sleep else { return "Čaká na hlavný spánok" }
+        return briefStore.hasDelivered(onDay: sleep.end) ? "Dnešný brief bol doručený" : "Brief zatiaľ nebol doručený"
+    }
+
+    var healthKitAccessText: String {
+        guard HKHealthStore.isHealthDataAvailable() else { return "Na zariadení nedostupný" }
+        if [sleepState, hrvState, rhrState, spo2State].contains(.permissionDenied) {
+            return "Skontrolujte povolenia v aplikácii Zdravie"
+        }
+        return "Prístup sa spravuje v aplikácii Zdravie"
+    }
+
+    func load(referenceDate: Date? = nil) async {
+        guard usesHealthKit else { return }
+        if let referenceDate { self.referenceDate = referenceDate }
+        loadGeneration += 1
+        let generation = loadGeneration
+        isLoading = true
+        sleepState = .loading
+        hrvState = .loading
+        rhrState = .loading
+        spo2State = .loading
+
+        do {
+            try await requestOverviewAuthorization()
+        } catch {
+            guard generation == loadGeneration else { return }
+            sleepState = .permissionDenied
+            hrvState = .permissionDenied
+            rhrState = .permissionDenied
+            spo2State = .permissionDenied
+            isLoading = false
+            return
+        }
+
+        async let sleep: Void = sleepIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
+        async let hrv: Void = hrvIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
+        async let rhr: Void = rhrIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
+        async let spo2: Void = spo2Integration.run(referenceDate: self.referenceDate, requestAccess: false)
+        _ = await (sleep, hrv, rhr, spo2)
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+
+        snapshot = DailyDashboardSnapshot(
+            referenceDate: self.referenceDate,
+            sleep: sleepIntegration.mainSleep,
+            hrv: hrvIntegration.hrvStatus,
+            rhr: rhrIntegration.rhrStatus,
+            spo2: spo2Integration.spo2Status
+        )
+        hrvHistory = hrvIntegration.history
+        rhrHistory = rhrIntegration.history
+        spo2History = spo2Integration.history
+        sleepState = Self.state(valueExists: snapshot.sleep != nil, text: sleepIntegration.statusText)
+        hrvState = Self.state(valueExists: snapshot.hrv != nil, text: hrvIntegration.statusText)
+        rhrState = Self.state(valueExists: snapshot.rhr != nil, text: rhrIntegration.statusText)
+        spo2State = Self.state(valueExists: snapshot.spo2 != nil, text: spo2Integration.statusText)
+        history = Self.mergeHistory(
+            referenceDate: self.referenceDate,
+            selected: snapshot,
+            hrv: hrvHistory,
+            rhr: rhrHistory,
+            spo2: spo2History
+        )
+        isLoading = false
+    }
+
+    func refreshNotificationAccess() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral: notificationAccess = .allowed
+        case .denied: notificationAccess = .denied
+        default: notificationAccess = .unknown
+        }
+    }
+
+    func sendSafeTestNotification() async {
+        notificationTestMessage = nil
+        do {
+            try await notifier.requestAuthorization()
+            try await notifier.notify(
+                BriefContent(
+                    title: "Watch Metrics",
+                    lines: [
+                        BriefLine(
+                            label: "Test",
+                            value: "notifikácia funguje",
+                            qualifier: nil,
+                            isProvisional: false
+                        )
+                    ]
+                )
+            )
+            notificationTestMessage = "Test bol odoslaný"
+        } catch {
+            notificationTestMessage = "Test zlyhal: \(error.localizedDescription)"
+        }
+        await refreshNotificationAccess()
+    }
+
+    private func requestOverviewAuthorization() async throws {
+        let readTypes: Set<HKObjectType> = [
+            HKCategoryType(.sleepAnalysis),
+            HKQuantityType(.heartRateVariabilitySDNN),
+            HKQuantityType(.restingHeartRate),
+            HKQuantityType(.oxygenSaturation)
+        ]
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            healthStore.requestAuthorization(toShare: nil, read: readTypes) { granted, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if granted {
+                    continuation.resume()
+                } else {
+                    continuation.resume(throwing: OverviewAuthorizationError.denied)
+                }
+            }
+        }
+    }
+
+    private static func state(valueExists: Bool, text: String) -> DataLoadState {
+        if valueExists { return .loaded }
+        if text.localizedCaseInsensitiveContains("authorization") ||
+            text.localizedCaseInsensitiveContains("povolen") {
+            return .permissionDenied
+        }
+        if text.localizedCaseInsensitiveContains("error") { return .failed(text) }
+        return .empty
+    }
+
+    private static func mergeHistory(
+        referenceDate: Date,
+        selected: DailyDashboardSnapshot,
+        hrv: [DatedMetric<HRVStatus>],
+        rhr: [DatedMetric<RHRStatus>],
+        spo2: [DatedMetric<SpO2Status>]
+    ) -> [DailyDashboardSnapshot] {
+        let calendar = Calendar.current
+        return (0..<14).compactMap { offset in
+            // Preserve the selected wall-clock time. SleepIntegration's window
+            // ends at referenceDate; normalizing history rows to midnight would
+            // truncate the selected night before its morning sleep ends.
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: referenceDate)
+            else { return nil }
+            let isSelected = calendar.isDate(day, inSameDayAs: selected.referenceDate)
+            return DailyDashboardSnapshot(
+                referenceDate: day,
+                sleep: isSelected ? selected.sleep : nil,
+                hrv: hrv.first { calendar.isDate($0.date, inSameDayAs: day) }?.value,
+                rhr: rhr.first { calendar.isDate($0.date, inSameDayAs: day) }?.value,
+                spo2: spo2.first { calendar.isDate($0.date, inSameDayAs: day) }?.value
+            )
+        }
+    }
+}
+
+private enum OverviewAuthorizationError: Error {
+    case denied
+}

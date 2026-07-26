@@ -4,11 +4,11 @@ Posledná aktualizácia: 2026-07-26
 
 ## Čo je to
 
-watchOS aplikácia LEN pre odvodené metriky (HRV status, RHR odchýlka, sleep score,
-readiness, SpO2, dychová frekvencia). NEtrackuje aktivity — tie trackuje natívna
-Workout app, my ich len čítame z HealthKitu. Solo dev, nulový rozpočet, agent-driven
-vývoj cez Claude Code. Plné pozadie a architektonické rozhodnutia: pozri docs/ (ak tam plán je
-uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
+Watch Metrics je watch-only produktová aplikácia pre osobný denný prehľad
+odvodených metrík zo HealthKitu. Aktivity netrackuje — tie zaznamenáva natívna
+Workout app a Watch Metrics číta iba existujúce údaje. Aktuálny produktový shell
+obsahuje Today, detaily metrík, 14-dňovú históriu, Settings a oddelené Developer
+menu. Aplikácia nie je zdravotnícka pomôcka.
 
 ## Kľúčové rozhodnutia (nemeň bez dobrého dôvodu)
 
@@ -22,16 +22,14 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
   neagregovať sám.
 - **Gate G0.2 overené (2026-07-24): HKHeartbeatSeriesQuery reálne funguje.**
   HKHeartbeatSeries (RR intervaly) nie je v Health exporte, ale priamo cez
-  HealthKit na zariadení áno — overené diagnostickou appkou
-  (`HealthKitDiagnostics/`, samostatný watchOS target mimo SwiftPM balíka):
+  HealthKit na zariadení áno — pôvodne overené diagnostickým režimom dnešnej
+  Watch Metrics appky (projekt je historicky uložený v priečinku
+  `HealthKitDiagnostics/`):
   **71 series za posledných 7 dní, prvá séria obsahuje 24 RR intervalov.**
   RRArtifactFilter + RMSSD (krok 4) sa teda dajú napojiť na reálne dáta,
   nie len syntetické — RMSSD už nie je natrvalo blokované na SDNN.
-  `HealthKitDiagnostics` zostáva čisto diagnostický nástroj (Gate G0.2),
-  nie súčasť produkčnej appky — jeho HealthKit query logika sa musí
-  neskôr prepísať/presunúť do reálnej watch-metrics appky ako HealthKit
-  integračná vrstva (samostatný budúci krok, mimo Sources/MetricsCore,
-  keďže MetricsCore nesmie importovať HealthKit).
+  Surový heartbeat-series nástroj zostáva dostupný iba cez Settings →
+  Developer; produkčný target a scheme sa volajú `WatchMetrics`.
 - Sources/MetricsCore je čistý Swift Package: nesmie importovať HealthKit,
   CoreLocation ani SwiftUI. Testy pred implementáciou (TDD).
 - **Ranný brief používa skutočný čas spánku, nie iba hranice session.**
@@ -64,16 +62,32 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
   `Tests/MetricsCoreTests/HRVStatusTests.swift` — vytvorené agentom, over že sú
   commitnuté (git status / git log)
 
+## Produkčná Watch Metrics appka
+
+- Projekt, app target a scheme: `WatchMetrics`; display name **Watch Metrics**,
+  bundle ID `com.watchmetrics.WatchMetrics`.
+- Watch-only konfigurácia, HealthKit entitlement, signing team `XXRA2Z8LT5`
+  a ranné background scheduling/deduplikácia zostali zachované.
+- `DailyOverviewStore` je jediný `@MainActor @Observable` koordinátor denného
+  prehľadu. SwiftUI views neobsahujú HealthKit query logiku a jedna chýbajúca
+  metrika neblokuje ostatné.
+- Reálne napojené dáta: hlavný spánok so `asleepDuration`, HRV SDNN, resting
+  heart rate a SpO₂. HRV/RHR/SpO₂ poskytujú kompaktný 14-dňový trend.
+- Today obsahuje štyri metriky a stav briefu; History otvára rovnaký
+  reference-date-aware dashboard. Settings obsahuje notifikácie, bezpečný test,
+  HealthKit informáciu a About.
+- Diagnostics, heartbeat series a `BriefDebugPanel` sú iba v Developer menu.
+  SwiftUI sample modely pokrývajú Today, detail, History, empty aj error stav a
+  nepoužívajú sa v produkčnom HealthKit behu.
+- `WatchMetricsWidgetExtension` ostáva statická bez App Group a live HealthKit
+  zdieľania. Tap otvorí hostiteľskú aplikáciu.
+- Budúce chunky: historický sleep chart, live metric complication, readiness,
+  sleep score, respiratory rate a VO₂max.
+
 ## Čo ešte chýba (v poradí, ako na to)
 
-1. ~~**Xcode.**~~ ✅ (2026-07-24) — Xcode.app stále nie je nainštalovaný (len
-   Command Line Tools), a prvý pokus o `swift test` zlyhal presne na
-   `no such module 'Testing'` (Testing.framework nedostupný pre SPM bez
-   plného Xcode). Na opakovaný pokus to ale prešlo — CLT toolchain vie
-   nájsť Testing.framework, len nekonzistentne (dôvod zatiaľ nejasný,
-   možno cache/module-cache stav). Netreba teda čakať na Mac App Store
-   Xcode inštaláciu, ale počítaj s tým, že `swift test` môže občas zlyhať
-   na chýbajúcom module a treba ho pustiť znova.
+1. ~~**Xcode.**~~ ✅ — plný Xcode je nainštalovaný; watchOS simulator buildy
+   a xcodegen projekt sú dostupné lokálne.
 2. ~~Po Xcode: `swift test --parallel`~~ ✅ (2026-07-24) — build OK, 1/1 test
    zlyhal ako očakávane: `hrvStatusComputesFromDailySamplesAgainstBaseline`
    — "HRVStatus not implemented yet — M1/M2 daily HRV status with 7d/28d
@@ -104,8 +118,7 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
    hodinkách. Výsledok: **71 series/7 dní, 24 RR intervalov v prvej
    sérii.** Real RR dáta sú dostupné — RMSSD pipeline z kroku 4 sa dá
    napojiť na reálne dáta, nie len syntetické (viď aj Kľúčové rozhodnutia
-   vyššie). HealthKitDiagnostics zostáva diagnostický nástroj; presun
-   jeho query logiky do produkčnej appky je samostatný budúci krok.
+   vyššie). Surový diagnostický nástroj dnes zostáva v Developer menu.
 8. ~~M3 — RHR odchýlka od baseline~~ ✅ (2026-07-25) — `RHRStatus`, rovnaký
    tvar ako HRVStatus (denný medián RestingHeartRate vs 7d/28d baseline,
    28d preferované, fallback na 7d), ale s vlastným `RHRStatusLevel`
@@ -135,9 +148,7 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
     spolu s predošlými 25 (35 spolu). V `HealthKitDiagnostics/`:
     `SpO2Integration.swift` (rovnaký vzor ako HRVIntegration, pozor na
     `HKUnit.percent()` vracajúci zlomok 0.0–1.0, nie 0–100 — treba ×100),
-    `SpO2StatusView.swift`, a nový `MetricsOverviewView.swift` zobrazujúci
-    HRV aj SpO2 spolu s farebným indikátorom (zelená/žltá/červená) ako
-    hlavná obrazovka appky.
+    pôvodné diagnostické views boli neskôr nahradené produkčným Today/detail UI.
 11. ~~Night picker + dátová korektnosť baseline pre historické noci~~ ✅
     (2026-07-25) — over overené: `BaselineTracker`/`HRVStatus`/`RHRStatus`/
     `SpO2Status` boli **už od začiatku referenceDate-aware** (žiadny
@@ -153,7 +164,7 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
     proti rýchlemu prescrollovaniu prepisujúcemu novšie dáta staršími,
     "Medián za noc" label a "Noc D.M.–D.M." rozsah pridané do
     HRVStatusView/SpO2StatusView/MetricsOverviewView.
-12. ~~UI polish (HealthKitDiagnostics scaffold)~~ ✅ (2026-07-25) — čisto
+12. ~~UI polish (pôvodný diagnostický scaffold)~~ ✅ (2026-07-25) — historický
     vizuálny beh, žiadna zmena v Sources/MetricsCore. `AppTheme.swift`
     (indigo/teal paleta z app ikony, oddelené traffic-light farby pre
     normal/low/critical) a `MetricCard.swift` (zdieľaná karta s pevnou
@@ -174,7 +185,9 @@ uložený) alebo si vyžiadaj kompletný pôvodný plán znova.
     executable" je na Xcode default (zapnuté), nie explicitne vypnuté ako
     predtým — ak sa LLDB symbolikačný problém vráti, treba to znova vypnúť
     v Xcode GUI (Edit Scheme → Run → Info).
-13. Postupne ďalšie metriky: sleep score, readiness kompozita,
+13. ~~Produkčný UI milestone~~ ✅ (2026-07-26) — pôvodný target prebudovaný
+    na Watch Metrics product shell; aktuálny stav je v sekcii vyššie.
+14. Postupne ďalšie metriky: sleep score, readiness kompozita,
     a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
     Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
 

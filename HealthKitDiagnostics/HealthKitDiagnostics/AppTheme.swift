@@ -11,6 +11,8 @@ enum AppTheme {
     /// A lighter indigo for card surfaces, so cards read as distinct from
     /// the screen background without breaking from the icon's palette.
     static let cardBackground = Color(red: 0.10, green: 0.13, blue: 0.30)
+    static let elevatedBackground = Color(red: 0.14, green: 0.18, blue: 0.38)
+    static let secondaryText = Color.white.opacity(0.68)
 
     /// Traffic-light status colors. Deliberately vivid/high-contrast for
     /// small-display, bright-sunlight readability, and deliberately NOT
@@ -21,4 +23,6 @@ enum AppTheme {
     static let statusCritical = Color(red: 1.00, green: 0.23, blue: 0.19)
 
     static let cardCornerRadius: CGFloat = 16
+    static let spacing: CGFloat = 10
+    static let cardPadding: CGFloat = 12
 }

@@ -10,13 +10,14 @@ final class SpO2Integration {
     private let spo2Type = HKQuantityType(.oxygenSaturation)
 
     private(set) var spo2Status: SpO2Status?
+    private(set) var history: [DatedMetric<SpO2Status>] = []
     private(set) var statusText = "Not started"
     private(set) var isLoading = false
 
     /// `referenceDate` picks which night to show (defaults to tonight) —
     /// see `HRVIntegration.run(referenceDate:)` for why this is the only
     /// place a "now" dependency exists in this pipeline.
-    func run(referenceDate: Date = Date()) async {
+    func run(referenceDate: Date = Date(), requestAccess: Bool = true) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -25,11 +26,13 @@ final class SpO2Integration {
             return
         }
 
-        do {
-            try await requestAuthorization()
-        } catch {
-            statusText = "Authorization error: \(error.localizedDescription)"
-            return
+        if requestAccess {
+            do {
+                try await requestAuthorization()
+            } catch {
+                statusText = "Authorization error: \(error.localizedDescription)"
+                return
+            }
         }
 
         await computeSpO2Status(referenceDate: referenceDate)
@@ -53,7 +56,7 @@ final class SpO2Integration {
         let calendar = Calendar.current
         let nightStart = calendar.startOfDay(for: referenceDate)
         guard let nightEnd = calendar.date(byAdding: .day, value: 1, to: nightStart),
-              let windowStart = calendar.date(byAdding: .day, value: -28, to: nightStart) else {
+              let windowStart = calendar.date(byAdding: .day, value: -41, to: nightStart) else {
             statusText = "Could not compute the 28-day lookback range"
             return
         }
@@ -75,6 +78,14 @@ final class SpO2Integration {
 
             let baseline = BaselineTracker.baseline(from: dailyValues, asOf: nightStart)
             let nightSamples = samplesByDay[nightStart] ?? []
+            history = Array((0..<14).compactMap { offset in
+                guard let day = calendar.date(byAdding: .day, value: -offset, to: nightStart),
+                      let status = SpO2Status.compute(
+                          from: samplesByDay[day] ?? [],
+                          baseline: BaselineTracker.baseline(from: dailyValues, asOf: day)
+                      ) else { return nil }
+                return DatedMetric(date: day, value: status)
+            }.reversed())
 
             guard let status = SpO2Status.compute(from: nightSamples, baseline: baseline) else {
                 spo2Status = nil

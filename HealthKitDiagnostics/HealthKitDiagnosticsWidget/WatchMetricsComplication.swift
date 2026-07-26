@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-/// Minimal, static complication — see spec section 9 / roadmap section 11:
+/// Static product complication — see roadmap section 11:
 /// watchOS grants a background-refresh app a much more generous budget when
 /// it has an active complication on the current watch face. This
 /// complication exists purely to claim that slot; it carries no live data
@@ -34,18 +34,19 @@ struct WatchMetricsComplicationView: View {
     var body: some View {
         switch family {
         case .accessoryInline:
-            Label("watch-metrics", systemImage: "waveform.path.ecg")
+            Label("Watch Metrics", systemImage: "waveform.path.ecg")
         case .accessoryRectangular:
-            HStack(spacing: 4) {
-                Image(systemName: "waveform.path.ecg")
+            VStack(alignment: .leading, spacing: 2) {
+                Label("Watch Metrics", systemImage: "waveform.path.ecg")
+                    .font(.caption.weight(.semibold))
                     .widgetAccentable()
-                Text("watch-metrics")
-                    .font(.caption)
+                Text("Denný prehľad")
+                    .font(.caption2)
             }
         case .accessoryCorner:
             Image(systemName: "waveform.path.ecg")
                 .widgetAccentable()
-                .widgetLabel("watch-metrics")
+                .widgetLabel("Watch Metrics")
         default: // .accessoryCircular and any future accessory family
             Image(systemName: "waveform.path.ecg")
                 .widgetAccentable()
@@ -59,9 +60,10 @@ struct WatchMetricsComplication: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WatchMetricsProvider()) { entry in
             WatchMetricsComplicationView(entry: entry)
+                .containerBackground(.indigo.gradient, for: .widget)
         }
-        .configurationDisplayName("watch-metrics")
-        .description("Zástupný symbol pre watch-metrics.")
+        .configurationDisplayName("Watch Metrics")
+        .description("Otvorí váš denný zdravotný prehľad.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .accessoryCorner])
     }
 }

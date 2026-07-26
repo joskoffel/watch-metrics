@@ -14,6 +14,7 @@ final class HRVIntegration {
     private let sdnnType = HKQuantityType(.heartRateVariabilitySDNN)
 
     private(set) var hrvStatus: HRVStatus?
+    private(set) var history: [DatedMetric<HRVStatus>] = []
     private(set) var statusText = "Not started"
     private(set) var isLoading = false
 
@@ -22,7 +23,7 @@ final class HRVIntegration {
     /// existing `asOf:` parameter — MetricsCore never called `Date()`
     /// internally. The only real "now" dependency was here, so this is
     /// where a selected historical night gets threaded through.
-    func run(referenceDate: Date = Date()) async {
+    func run(referenceDate: Date = Date(), requestAccess: Bool = true) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -31,11 +32,13 @@ final class HRVIntegration {
             return
         }
 
-        do {
-            try await requestAuthorization()
-        } catch {
-            statusText = "Authorization error: \(error.localizedDescription)"
-            return
+        if requestAccess {
+            do {
+                try await requestAuthorization()
+            } catch {
+                statusText = "Authorization error: \(error.localizedDescription)"
+                return
+            }
         }
 
         await computeHRVStatus(referenceDate: referenceDate)
@@ -59,7 +62,7 @@ final class HRVIntegration {
         let calendar = Calendar.current
         let nightStart = calendar.startOfDay(for: referenceDate)
         guard let nightEnd = calendar.date(byAdding: .day, value: 1, to: nightStart),
-              let windowStart = calendar.date(byAdding: .day, value: -28, to: nightStart) else {
+              let windowStart = calendar.date(byAdding: .day, value: -41, to: nightStart) else {
             statusText = "Could not compute the 28-day lookback range"
             return
         }
@@ -81,6 +84,14 @@ final class HRVIntegration {
 
             let baseline = BaselineTracker.baseline(from: dailyValues, asOf: nightStart)
             let nightSamples = samplesByDay[nightStart] ?? []
+            history = Array((0..<14).compactMap { offset in
+                guard let day = calendar.date(byAdding: .day, value: -offset, to: nightStart),
+                      let status = HRVStatus.compute(
+                          from: samplesByDay[day] ?? [],
+                          baseline: BaselineTracker.baseline(from: dailyValues, asOf: day)
+                      ) else { return nil }
+                return DatedMetric(date: day, value: status)
+            }.reversed())
 
             guard let status = HRVStatus.compute(from: nightSamples, baseline: baseline) else {
                 hrvStatus = nil

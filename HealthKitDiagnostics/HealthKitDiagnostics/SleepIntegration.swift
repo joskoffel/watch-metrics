@@ -29,7 +29,7 @@ final class SleepIntegration {
     /// wall-clock time — using it as `now` would then misclassify a
     /// 3-day-old session as still in progress. The real current instant is
     /// fetched fresh in `computeMainSleep` instead.
-    func run(referenceDate: Date = Date()) async {
+    func run(referenceDate: Date = Date(), requestAccess: Bool = true) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -38,11 +38,13 @@ final class SleepIntegration {
             return
         }
 
-        do {
-            try await requestAuthorization()
-        } catch {
-            statusText = "Authorization error: \(error.localizedDescription)"
-            return
+        if requestAccess {
+            do {
+                try await requestAuthorization()
+            } catch {
+                statusText = "Authorization error: \(error.localizedDescription)"
+                return
+            }
         }
 
         await computeMainSleep(referenceDate: referenceDate)
@@ -131,7 +133,7 @@ final class SleepIntegration {
         }
     }
 
-    private static func stage(forRawValue rawValue: Int) -> SleepSample.Stage? {
+    nonisolated private static func stage(forRawValue rawValue: Int) -> SleepSample.Stage? {
         guard let value = HKCategoryValueSleepAnalysis(rawValue: rawValue) else { return nil }
         switch value {
         case .inBed: return .inBed
