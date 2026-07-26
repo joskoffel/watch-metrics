@@ -75,7 +75,7 @@ struct TodayView: View {
                         title: "Okysličenie",
                         symbol: "lungs.fill",
                         value: store.snapshot.spo2.map { "\(Int($0.value.rounded())) %" },
-                        subtitle: store.snapshot.spo2.map { spo2Level($0.level) } ?? "SpO₂ počas dňa",
+                        subtitle: store.snapshot.spo2.map { spo2Level($0.level) } ?? "SpO₂ počas hlavného spánku",
                         color: store.snapshot.spo2.map { spo2Color($0.level) } ?? AppTheme.accent,
                         state: store.spo2State
                     )
@@ -380,6 +380,7 @@ struct SettingsView: View {
 struct DeveloperMenuView: View {
     var body: some View {
         List {
+            NavigationLink("HRV Data Audit") { HRVDataAuditView() }
             NavigationLink("HealthKit diagnostika") { DiagnosticsView() }
             NavigationLink("Ranný brief debug") { BriefDebugPanel() }
         }

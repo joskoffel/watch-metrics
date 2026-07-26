@@ -34,9 +34,10 @@ final class BriefRunner {
 
         let now = Date()
         await sleepIntegration.run(referenceDate: now)
-        await hrvIntegration.run(referenceDate: now)
+        let nights = sleepIntegration.resolvedNights
+        await hrvIntegration.run(referenceDate: now, nights: nights)
         await rhrIntegration.run(referenceDate: now)
-        await spo2Integration.run(referenceDate: now)
+        await spo2Integration.run(referenceDate: now, nights: nights)
 
         let decision = BriefDeliveryPolicy.evaluate(
             now: now,

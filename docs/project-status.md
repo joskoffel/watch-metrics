@@ -8,11 +8,13 @@ Watch Metrics je watch-only produktová aplikácia pre osobný denný prehľad
 odvodených metrík zo HealthKitu. Aktivity netrackuje — tie zaznamenáva natívna
 Workout app a Watch Metrics číta iba existujúce údaje. Aktuálny produktový shell
 obsahuje Today, detaily metrík, 14-dňovú históriu, Settings a oddelené Developer
-menu. Aplikácia nie je zdravotnícka pomôcka.
+menu. Produktové smerovanie je **morning-first HRV/recovery**; cieľom nie je
+kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
 
 ## Kľúčové rozhodnutia (nemeň bez dobrého dôvodu)
 
-- **Denné HRV okno, nie 3-dňové kĺzavé.** Reálne dáta z Health exportu (90 dní)
+- **Nočné HRV okno podľa hlavného spánku, nie kalendárny deň ani 3-dňové
+  kĺzavé okno.** Reálne dáta z Health exportu (90 dní)
   ukázali medián 9 HRV vzoriek/noc, 92% nocí ≥5 vzoriek — lepšie než pôvodný
   konzervatívny predpoklad. M1/M2 (HRV status) sa počíta na dennej báze
   s 7d/28d baseline.
@@ -32,6 +34,11 @@ menu. Aplikácia nie je zdravotnícka pomôcka.
   Developer; produkčný target a scheme sa volajú `WatchMetrics`.
 - Sources/MetricsCore je čistý Swift Package: nesmie importovať HealthKit,
   CoreLocation ani SwiftUI. Testy pred implementáciou (TDD).
+- Každá recovery noc má jednu app-layer reprezentáciu `ResolvedNight`: hranice
+  sú `mainSleep.start...end` a deň je lokálne ráno podľa `sleep.end`. SDNN,
+  SpO₂, heartbeat series a validačný nočný pulz používajú presne tento interval.
+  Ak hlavný spánok chýba, nočné okno sa nevymýšľa. Historická baseline používa
+  iba skoršie noci — cieľová noc ani budúce dáta do nej nevstupujú.
 - **Ranný brief používa skutočný čas spánku, nie iba hranice session.**
   `SleepSession.asleepDuration` je súčet unikátneho času asleep segmentov
   bez awake/inBed medzier a bez dvojitého započítania overlapov; podľa tejto
@@ -71,18 +78,30 @@ menu. Aplikácia nie je zdravotnícka pomôcka.
 - `DailyOverviewStore` je jediný `@MainActor @Observable` koordinátor denného
   prehľadu. SwiftUI views neobsahujú HealthKit query logiku a jedna chýbajúca
   metrika neblokuje ostatné.
-- Reálne napojené dáta: hlavný spánok so `asleepDuration`, HRV SDNN, resting
-  heart rate a SpO₂. HRV/RHR/SpO₂ poskytujú kompaktný 14-dňový trend.
+- Reálne napojené dáta: hlavný spánok so `asleepDuration`, nočné HRV SDNN,
+  denný Apple Health resting heart rate a nočné SpO₂. HRV/RHR/SpO₂ poskytujú
+  kompaktný 14-dňový trend. RHR sa zámerne neoznačuje ako nočné meranie.
 - Today obsahuje štyri metriky a stav briefu; History otvára rovnaký
   reference-date-aware dashboard. Settings obsahuje notifikácie, bezpečný test,
   HealthKit informáciu a About.
 - Diagnostics, heartbeat series a `BriefDebugPanel` sú iba v Developer menu.
+  Developer menu navyše obsahuje **HRV Data Audit** pre posledných 28
+  vyriešených nocí. Audit lokálne porovnáva nočný SDNN s RMSSD, reportuje
+  počet heartbeat sérií, raw/prijaté RR intervaly, artifact-filter ratio,
+  mediány pokrytia a riedke/chybné noci. Zároveň validačne počíta počet,
+  medián, robustnú dolnú hodnotu a pokrytie tretín nočného heart rate.
+  Nič neposiela mimo zariadenia a osobné hodnoty nie sú súčasťou repozitára.
   SwiftUI sample modely pokrývajú Today, detail, History, empty aj error stav a
   nepoužívajú sa v produkčnom HealthKit behu.
 - `WatchMetricsWidgetExtension` ostáva statická bez App Group a live HealthKit
   zdieľania. Tap otvorí hostiteľskú aplikáciu.
+- Aktuálny stabilný používateľský HRV status je ešte pôvodný denný SDNN status.
+  RMSSD a nočný heart-rate settling sú experimentálne auditné výstupy, nie
+  produkčný recovery verdict. HRV Status 2.0, adaptívne pásmo, morning-first
+  Today, swipe dní a HRV-first jediný ranný brief čakajú na výsledkový
+  checkpoint po fyzickom 28-nočnom audite.
 - Budúce chunky: historický sleep chart, live metric complication, readiness,
-  sleep score, respiratory rate a VO₂max.
+  respiratory rate a VO₂max. Generický sleep/readiness score sa neplánuje.
 
 ## Čo ešte chýba (v poradí, ako na to)
 
@@ -187,9 +206,16 @@ menu. Aplikácia nie je zdravotnícka pomôcka.
     v Xcode GUI (Edit Scheme → Run → Info).
 13. ~~Produkčný UI milestone~~ ✅ (2026-07-26) — pôvodný target prebudovaný
     na Watch Metrics product shell; aktuálny stav je v sekcii vyššie.
-14. Postupne ďalšie metriky: sleep score, readiness kompozita,
-    a napojenie RMSSD na reálne RR dáta cez HealthKit integračnú vrstvu.
-    Ďalší krok sa rozhodne spoločne s používateľom, nie automaticky.
+14. ~~Nočné okná + produkčné RR/RMSSD čítanie + audit~~ ✅ (2026-07-26) —
+    HRV a SpO₂ sú filtrované presným intervalom hlavného spánku, historické
+    noci majú vlastné intervaly a baseline nemá target/future leakage.
+    `HeartbeatSeriesService` mapuje kumulatívne heartbeat eventy na RR bez
+    premostenia `precededByGap` alebo hraníc sérií, používa
+    `RRArtifactFilter` a RMSSD agregáciu bez cross-series rozdielu; chráni
+    cancellation aj viacnásobné completion callbacky. Watch-only audit UI
+    sumarizuje SDNN/RMSSD a validačný nočný pulz za 28 nocí. Automatizované
+    testy neobsahujú osobné dáta; výsledné pokrytie treba odčítať na fyzických
+    hodinkách pred rozhodnutím o HRV Status 2.0.
 
 ## Nástroje a workflow
 

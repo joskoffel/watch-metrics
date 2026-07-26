@@ -52,7 +52,10 @@ public enum BaselineTracker {
     ) -> RollingWindowBaseline? {
         let valuesInWindow = dailyValues.filter { dailyValue in
             let dayOffset = (targetDate.timeIntervalSince(dailyValue.date) / 86400).rounded()
-            return dayOffset >= 0 && dayOffset < Double(windowDays)
+            // A target night must never contribute to the baseline used to
+            // classify itself. The window is the `windowDays` complete days
+            // immediately before targetDate; future values are excluded too.
+            return dayOffset > 0 && dayOffset <= Double(windowDays)
         }
         guard !valuesInWindow.isEmpty else { return nil }
 

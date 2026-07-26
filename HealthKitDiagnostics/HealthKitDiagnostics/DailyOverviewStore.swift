@@ -2,6 +2,7 @@ import Foundation
 import HealthKit
 import MetricsCore
 import UserNotifications
+import WatchMetricsSupport
 
 enum DataLoadState: Equatable {
     case idle
@@ -118,11 +119,23 @@ final class DailyOverviewStore {
             return
         }
 
-        async let sleep: Void = sleepIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
-        async let hrv: Void = hrvIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
-        async let rhr: Void = rhrIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
-        async let spo2: Void = spo2Integration.run(referenceDate: self.referenceDate, requestAccess: false)
-        _ = await (sleep, hrv, rhr, spo2)
+        await sleepIntegration.run(
+            referenceDate: self.referenceDate,
+            historyDays: 42,
+            requestAccess: false
+        )
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+
+        let nights = sleepIntegration.resolvedNights
+        await hrvIntegration.run(
+            referenceDate: self.referenceDate, nights: nights, requestAccess: false
+        )
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+        await rhrIntegration.run(referenceDate: self.referenceDate, requestAccess: false)
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+        await spo2Integration.run(
+            referenceDate: self.referenceDate, nights: nights, requestAccess: false
+        )
         guard generation == loadGeneration, !Task.isCancelled else { return }
 
         snapshot = DailyDashboardSnapshot(
@@ -142,6 +155,7 @@ final class DailyOverviewStore {
         history = Self.mergeHistory(
             referenceDate: self.referenceDate,
             selected: snapshot,
+            nights: nights,
             hrv: hrvHistory,
             rhr: rhrHistory,
             spo2: spo2History
@@ -215,6 +229,7 @@ final class DailyOverviewStore {
     private static func mergeHistory(
         referenceDate: Date,
         selected: DailyDashboardSnapshot,
+        nights: [ResolvedNight],
         hrv: [DatedMetric<HRVStatus>],
         rhr: [DatedMetric<RHRStatus>],
         spo2: [DatedMetric<SpO2Status>]
@@ -229,7 +244,9 @@ final class DailyOverviewStore {
             let isSelected = calendar.isDate(day, inSameDayAs: selected.referenceDate)
             return DailyDashboardSnapshot(
                 referenceDate: day,
-                sleep: isSelected ? selected.sleep : nil,
+                sleep: isSelected
+                    ? selected.sleep
+                    : nights.first { calendar.isDate($0.day, inSameDayAs: day) }?.sleep,
                 hrv: hrv.first { calendar.isDate($0.date, inSameDayAs: day) }?.value,
                 rhr: rhr.first { calendar.isDate($0.date, inSameDayAs: day) }?.value,
                 spo2: spo2.first { calendar.isDate($0.date, inSameDayAs: day) }?.value

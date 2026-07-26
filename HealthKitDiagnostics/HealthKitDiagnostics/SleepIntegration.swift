@@ -1,6 +1,7 @@
 import Foundation
 import HealthKit
 import MetricsCore
+import WatchMetricsSupport
 
 /// HealthKit -> MetricsCore bridge for sleep sessions, same shape as
 /// `HRVIntegration`/`SpO2Integration`.
@@ -11,6 +12,8 @@ final class SleepIntegration {
     private let sleepType = HKCategoryType(.sleepAnalysis)
 
     private(set) var mainSleep: SleepSession?
+    private(set) var resolvedNight: ResolvedNight?
+    private(set) var resolvedNights: [ResolvedNight] = []
     private(set) var statusText = "Not started"
     private(set) var isLoading = false
 
@@ -29,7 +32,11 @@ final class SleepIntegration {
     /// wall-clock time — using it as `now` would then misclassify a
     /// 3-day-old session as still in progress. The real current instant is
     /// fetched fresh in `computeMainSleep` instead.
-    func run(referenceDate: Date = Date(), requestAccess: Bool = true) async {
+    func run(
+        referenceDate: Date = Date(),
+        historyDays: Int = 42,
+        requestAccess: Bool = true
+    ) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -47,7 +54,7 @@ final class SleepIntegration {
             }
         }
 
-        await computeMainSleep(referenceDate: referenceDate)
+        await computeNights(referenceDate: referenceDate, historyDays: historyDays)
     }
 
     private func requestAuthorization() async throws {
@@ -64,10 +71,14 @@ final class SleepIntegration {
         }
     }
 
-    private func computeMainSleep(referenceDate: Date) async {
+    private func computeNights(referenceDate: Date, historyDays: Int) async {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: referenceDate)
-        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+        guard historyDays > 0,
+              let oldestReference = calendar.date(
+                  byAdding: .day, value: -(historyDays - 1), to: referenceDate
+              ),
+              let oldestMorning = calendar.dateInterval(of: .day, for: oldestReference)?.start,
+              let yesterday = calendar.date(byAdding: .day, value: -1, to: oldestMorning),
               let windowStart = calendar.date(
                   bySettingHour: BriefConstants.nightWindowStartHour, minute: 0, second: 0, of: yesterday
               ) else {
@@ -82,21 +93,37 @@ final class SleepIntegration {
             guard !samples.isEmpty else {
                 statusText = "Nedostatok dát — žiadne spánkové vzorky za túto noc"
                 mainSleep = nil
+                resolvedNight = nil
+                resolvedNights = []
                 sessions = []
                 return
             }
 
             let builtSessions = SleepSessionBuilder.build(from: samples)
             sessions = builtSessions
-            let window = DateInterval(start: windowStart, end: referenceDate)
+            let actualNow = Date()
+            let nights = (0..<historyDays).compactMap { offset -> ResolvedNight? in
+                guard let day = calendar.date(byAdding: .day, value: -offset, to: referenceDate) else {
+                    return nil
+                }
+                return NightWindowResolver.resolve(
+                    referenceDate: day,
+                    sessions: builtSessions,
+                    calendar: calendar,
+                    now: actualNow
+                )
+            }
+            resolvedNights = nights
+            resolvedNight = nights.first {
+                calendar.isDate($0.day, inSameDayAs: referenceDate)
+            }
+            mainSleep = resolvedNight?.sleep
 
-            guard let main = MainSleepResolver.resolveMainSleep(sessions: builtSessions, window: window, now: Date()) else {
-                mainSleep = nil
+            guard mainSleep != nil else {
                 statusText = "Žiadny hlavný spánok pre túto noc"
                 return
             }
 
-            mainSleep = main
             statusText = "OK"
         } catch {
             statusText = "Query error: \(error.localizedDescription)"

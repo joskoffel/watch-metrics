@@ -11,13 +11,15 @@ private func day(_ isoDate: String) -> Date {
     let dailyValues = [
         // 8 days before target — outside the 7d window, must be excluded
         DailyMetricValue(date: day("2026-07-08T00:00:00Z"), value: 999),
+        DailyMetricValue(date: day("2026-07-09T00:00:00Z"), value: 43),
         DailyMetricValue(date: day("2026-07-10T00:00:00Z"), value: 40),
         DailyMetricValue(date: day("2026-07-11T00:00:00Z"), value: 42),
         DailyMetricValue(date: day("2026-07-12T00:00:00Z"), value: 38),
         DailyMetricValue(date: day("2026-07-13T00:00:00Z"), value: 45),
         DailyMetricValue(date: day("2026-07-14T00:00:00Z"), value: 41),
         DailyMetricValue(date: day("2026-07-15T00:00:00Z"), value: 39),
-        DailyMetricValue(date: target, value: 43)
+        // The target night must not leak into its own baseline.
+        DailyMetricValue(date: target, value: 999)
     ]
 
     let result = BaselineTracker.rollingWindow(dailyValues: dailyValues, asOf: target, windowDays: 7)
@@ -33,9 +35,10 @@ private func day(_ isoDate: String) -> Date {
     let dailyValues = [
         DailyMetricValue(date: day("2026-07-10T00:00:00Z"), value: 40),
         DailyMetricValue(date: day("2026-07-11T00:00:00Z"), value: 42),
+        DailyMetricValue(date: day("2026-07-12T00:00:00Z"), value: 44),
         DailyMetricValue(date: day("2026-07-13T00:00:00Z"), value: 45),
         DailyMetricValue(date: day("2026-07-15T00:00:00Z"), value: 39),
-        DailyMetricValue(date: target, value: 43)
+        DailyMetricValue(date: target, value: 999)
     ]
 
     let result = BaselineTracker.rollingWindow(dailyValues: dailyValues, asOf: target, windowDays: 7)
@@ -48,7 +51,10 @@ private func day(_ isoDate: String) -> Date {
 
 @Test func rollingWindowHasLowConfidenceForSingleDayInTwentyEightDayWindow() {
     let target = day("2026-07-16T00:00:00Z")
-    let dailyValues = [DailyMetricValue(date: target, value: 50)]
+    let dailyValues = [
+        DailyMetricValue(date: target.addingTimeInterval(-86400), value: 50),
+        DailyMetricValue(date: target, value: 999)
+    ]
 
     let result = BaselineTracker.rollingWindow(dailyValues: dailyValues, asOf: target, windowDays: 28)
 
@@ -63,9 +69,23 @@ private func day(_ isoDate: String) -> Date {
     #expect(BaselineTracker.rollingWindow(dailyValues: [], asOf: target, windowDays: 7) == nil)
 }
 
+@Test func baselineExcludesTargetNightAndFutureValues() {
+    let target = Date(timeIntervalSince1970: 10 * 86400)
+    let values = [
+        DailyMetricValue(date: target.addingTimeInterval(-86400), value: 40),
+        DailyMetricValue(date: target, value: 400),
+        DailyMetricValue(date: target.addingTimeInterval(86400), value: 800)
+    ]
+
+    let baseline = BaselineTracker.baseline(from: values, asOf: target)
+
+    #expect(baseline.sevenDay?.median == 40)
+    #expect(baseline.sevenDay?.availableDays == 1)
+}
+
 @Test func baselineComputesBothSevenDayAndTwentyEightDayWindows() {
     let target = day("2026-07-16T00:00:00Z")
-    let dailyValues = (0..<28).map { offset -> DailyMetricValue in
+    let dailyValues = (1...28).map { offset -> DailyMetricValue in
         DailyMetricValue(date: target.addingTimeInterval(-Double(offset) * 86400), value: 40 + Double(offset % 5))
     }
 

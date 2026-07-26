@@ -1,6 +1,7 @@
 import Foundation
 import HealthKit
 import MetricsCore
+import WatchMetricsSupport
 
 /// HealthKit -> MetricsCore bridge for SpO2, same shape as `HRVIntegration`.
 @MainActor
@@ -17,7 +18,11 @@ final class SpO2Integration {
     /// `referenceDate` picks which night to show (defaults to tonight) —
     /// see `HRVIntegration.run(referenceDate:)` for why this is the only
     /// place a "now" dependency exists in this pipeline.
-    func run(referenceDate: Date = Date(), requestAccess: Bool = true) async {
+    func run(
+        referenceDate: Date = Date(),
+        nights: [ResolvedNight],
+        requestAccess: Bool = true
+    ) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -35,7 +40,7 @@ final class SpO2Integration {
             }
         }
 
-        await computeSpO2Status(referenceDate: referenceDate)
+        await computeSpO2Status(referenceDate: referenceDate, nights: nights)
     }
 
     private func requestAuthorization() async throws {
@@ -52,17 +57,18 @@ final class SpO2Integration {
         }
     }
 
-    private func computeSpO2Status(referenceDate: Date) async {
+    private func computeSpO2Status(referenceDate: Date, nights: [ResolvedNight]) async {
         let calendar = Calendar.current
-        let nightStart = calendar.startOfDay(for: referenceDate)
-        guard let nightEnd = calendar.date(byAdding: .day, value: 1, to: nightStart),
-              let windowStart = calendar.date(byAdding: .day, value: -41, to: nightStart) else {
-            statusText = "Could not compute the 28-day lookback range"
+        guard let firstStart = nights.map(\.interval.start).min(),
+              let lastEnd = nights.map(\.interval.end).max() else {
+            spo2Status = nil
+            history = []
+            statusText = "Nedostatok dát — chýba hlavný spánok"
             return
         }
 
         do {
-            let samples = try await fetchSpO2Samples(from: windowStart, to: nightEnd)
+            let samples = try await fetchSpO2Samples(from: firstStart, to: lastEnd)
             guard !Task.isCancelled else { return }
 
             guard !samples.isEmpty else {
@@ -71,29 +77,40 @@ final class SpO2Integration {
                 return
             }
 
-            let samplesByDay = Dictionary(grouping: samples) { calendar.startOfDay(for: $0.timestamp) }
-            let dailyValues = samplesByDay.map { day, daySamples in
-                DailyMetricValue(date: day, value: Self.median(of: daySamples.map(\.value)))
+            let dailyValues = nights.compactMap {
+                NightMetricMapper.dailyMedian(samples: samples, kind: .oxygenSaturation, in: $0)
             }
-
-            let baseline = BaselineTracker.baseline(from: dailyValues, asOf: nightStart)
-            let nightSamples = samplesByDay[nightStart] ?? []
-            history = Array((0..<14).compactMap { offset in
-                guard let day = calendar.date(byAdding: .day, value: -offset, to: nightStart),
-                      let status = SpO2Status.compute(
-                          from: samplesByDay[day] ?? [],
-                          baseline: BaselineTracker.baseline(from: dailyValues, asOf: day)
-                      ) else { return nil }
-                return DatedMetric(date: day, value: status)
+            let selected = nights.first {
+                calendar.isDate($0.day, inSameDayAs: referenceDate)
+            }
+            history = Array(nights.prefix(14).compactMap { night in
+                let nightSamples = NightMetricMapper.samples(
+                    samples, kind: .oxygenSaturation, in: night
+                )
+                guard let status = SpO2Status.compute(
+                    from: nightSamples,
+                    baseline: BaselineTracker.baseline(from: dailyValues, asOf: night.day)
+                ) else { return nil }
+                return DatedMetric(date: night.day, value: status)
             }.reversed())
 
-            guard let status = SpO2Status.compute(from: nightSamples, baseline: baseline) else {
+            guard let selected else {
+                spo2Status = nil
+                statusText = "Nedostatok dát — chýba hlavný spánok"
+                return
+            }
+            let nightSamples = NightMetricMapper.samples(samples, kind: .oxygenSaturation, in: selected)
+            guard let status = SpO2Status.compute(
+                from: nightSamples,
+                baseline: BaselineTracker.baseline(from: dailyValues, asOf: selected.day)
+            ) else {
                 spo2Status = nil
                 statusText = "Nedostatok dát pre túto noc"
                 return
             }
 
             spo2Status = status
+            statusText = "OK"
         } catch {
             statusText = "Query error: \(error.localizedDescription)"
         }
@@ -132,15 +149,6 @@ final class SpO2Integration {
 
             healthStore.execute(query)
         }
-    }
-
-    private static func median(of values: [Double]) -> Double {
-        let sorted = values.sorted()
-        let count = sorted.count
-        if count % 2 == 1 {
-            return sorted[count / 2]
-        }
-        return (sorted[count / 2 - 1] + sorted[count / 2]) / 2
     }
 }
 

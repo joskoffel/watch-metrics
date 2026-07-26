@@ -1,6 +1,7 @@
 import Foundation
 import HealthKit
 import MetricsCore
+import WatchMetricsSupport
 
 /// First real bridge between HealthKit and MetricsCore: reads HRV SDNN
 /// samples, reduces them to the daily/baseline shape MetricsCore expects,
@@ -23,7 +24,11 @@ final class HRVIntegration {
     /// existing `asOf:` parameter — MetricsCore never called `Date()`
     /// internally. The only real "now" dependency was here, so this is
     /// where a selected historical night gets threaded through.
-    func run(referenceDate: Date = Date(), requestAccess: Bool = true) async {
+    func run(
+        referenceDate: Date = Date(),
+        nights: [ResolvedNight],
+        requestAccess: Bool = true
+    ) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -41,7 +46,7 @@ final class HRVIntegration {
             }
         }
 
-        await computeHRVStatus(referenceDate: referenceDate)
+        await computeHRVStatus(referenceDate: referenceDate, nights: nights)
     }
 
     private func requestAuthorization() async throws {
@@ -58,17 +63,18 @@ final class HRVIntegration {
         }
     }
 
-    private func computeHRVStatus(referenceDate: Date) async {
+    private func computeHRVStatus(referenceDate: Date, nights: [ResolvedNight]) async {
         let calendar = Calendar.current
-        let nightStart = calendar.startOfDay(for: referenceDate)
-        guard let nightEnd = calendar.date(byAdding: .day, value: 1, to: nightStart),
-              let windowStart = calendar.date(byAdding: .day, value: -41, to: nightStart) else {
-            statusText = "Could not compute the 28-day lookback range"
+        guard let firstStart = nights.map(\.interval.start).min(),
+              let lastEnd = nights.map(\.interval.end).max() else {
+            hrvStatus = nil
+            history = []
+            statusText = "Nedostatok dát — chýba hlavný spánok"
             return
         }
 
         do {
-            let samples = try await fetchSDNNSamples(from: windowStart, to: nightEnd)
+            let samples = try await fetchSDNNSamples(from: firstStart, to: lastEnd)
             guard !Task.isCancelled else { return }
 
             guard !samples.isEmpty else {
@@ -77,31 +83,44 @@ final class HRVIntegration {
                 return
             }
 
-            let samplesByDay = Dictionary(grouping: samples) { calendar.startOfDay(for: $0.timestamp) }
-            let dailyValues = samplesByDay.map { day, daySamples in
-                DailyMetricValue(date: day, value: Self.median(of: daySamples.map(\.value)))
+            let dailyValues = nights.compactMap {
+                NightMetricMapper.dailyMedian(
+                    samples: samples, kind: .heartRateVariabilitySDNN, in: $0
+                )
             }
-
-            let baseline = BaselineTracker.baseline(from: dailyValues, asOf: nightStart)
-            let nightSamples = samplesByDay[nightStart] ?? []
-            history = Array((0..<14).compactMap { offset in
-                guard let day = calendar.date(byAdding: .day, value: -offset, to: nightStart),
-                      let status = HRVStatus.compute(
-                          from: samplesByDay[day] ?? [],
-                          baseline: BaselineTracker.baseline(from: dailyValues, asOf: day)
-                      ) else { return nil }
-                return DatedMetric(date: day, value: status)
+            let selected = nights.first {
+                calendar.isDate($0.day, inSameDayAs: referenceDate)
+            }
+            history = Array(nights.prefix(14).compactMap { night in
+                let nightSamples = NightMetricMapper.samples(
+                    samples, kind: .heartRateVariabilitySDNN, in: night
+                )
+                guard let status = HRVStatus.compute(
+                    from: nightSamples,
+                    baseline: BaselineTracker.baseline(from: dailyValues, asOf: night.day)
+                ) else { return nil }
+                return DatedMetric(date: night.day, value: status)
             }.reversed())
 
-            guard let status = HRVStatus.compute(from: nightSamples, baseline: baseline) else {
+            guard let selected else {
                 hrvStatus = nil
-                statusText = nightSamples.isEmpty
-                    ? "Nedostatok dát pre túto noc"
-                    : "Baseline zatiaľ nedostupný — chýba história za 7d aj 28d"
+                statusText = "Nedostatok dát — chýba hlavný spánok"
+                return
+            }
+            let nightSamples = NightMetricMapper.samples(
+                samples, kind: .heartRateVariabilitySDNN, in: selected
+            )
+            guard let status = HRVStatus.compute(
+                from: nightSamples,
+                baseline: BaselineTracker.baseline(from: dailyValues, asOf: selected.day)
+            ) else {
+                hrvStatus = nil
+                statusText = "Nedostatok dát pre túto noc"
                 return
             }
 
             hrvStatus = status
+            statusText = "OK"
         } catch {
             statusText = "Query error: \(error.localizedDescription)"
         }
@@ -141,15 +160,6 @@ final class HRVIntegration {
 
             healthStore.execute(query)
         }
-    }
-
-    private static func median(of values: [Double]) -> Double {
-        let sorted = values.sorted()
-        let count = sorted.count
-        if count % 2 == 1 {
-            return sorted[count / 2]
-        }
-        return (sorted[count / 2 - 1] + sorted[count / 2]) / 2
     }
 }
 

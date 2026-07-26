@@ -75,7 +75,7 @@ final class RHRIntegration {
             from: byDay[selectedDay] ?? [],
             baseline: BaselineTracker.baseline(from: dailyValues, asOf: selectedDay)
         )
-        statusText = rhrStatus == nil ? "Nedostatok dát alebo histórie pre túto noc" : "OK"
+        statusText = rhrStatus == nil ? "Nedostatok denných dát alebo histórie" : "OK"
     }
 
     private func fetch(from start: Date, to end: Date) async throws -> [SensorSample] {
