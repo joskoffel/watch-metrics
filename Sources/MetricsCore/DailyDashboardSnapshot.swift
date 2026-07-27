@@ -8,6 +8,7 @@ public struct DailyDashboardSnapshot: Equatable {
     public let hrv: HRVStatus?
     public let rhr: RHRStatus?
     public let spo2: SpO2Status?
+    public let recovery: RecoverySignal?
 
     public init(
         referenceDate: Date,
@@ -21,6 +22,7 @@ public struct DailyDashboardSnapshot: Equatable {
         self.hrv = hrv
         self.rhr = rhr
         self.spo2 = spo2
+        self.recovery = RecoverySignal.evaluate(hrv: hrv, rhr: rhr)
     }
 
     public var availableSectionCount: Int {

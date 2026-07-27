@@ -29,11 +29,12 @@ public struct BriefContent: Equatable {
 
 /// Turns a `NightSummary` into `BriefContent`.
 ///
-/// The sleep-duration line is always first and always present; HRV/RHR/SpO2
-/// each contribute a line only when that metric is non-nil, and the result
-/// is capped at 4 lines total for on-wrist readability.
+/// The sleep-duration line is always first and always present. Recovery is a
+/// concise optional interpretation of HRV/RHR; the underlying metric lines
+/// stay present on their own. The result is capped at 5 lines for on-wrist
+/// readability.
 public enum BriefComposer {
-    private static let maxLines = 4
+    private static let maxLines = 5
 
     public static func compose(from summary: NightSummary) -> BriefContent {
         var lines = [sleepLine(for: summary.sleep)]
@@ -43,6 +44,9 @@ public enum BriefComposer {
         }
         if let rhr = summary.rhr {
             lines.append(rhrLine(for: rhr))
+        }
+        if let recovery = summary.recovery {
+            lines.append(recoveryLine(for: recovery))
         }
         if let spo2 = summary.spo2 {
             lines.append(spo2Line(for: spo2))
@@ -85,6 +89,10 @@ public enum BriefComposer {
             qualifier: qualifier,
             isProvisional: status.confidence == .low
         )
+    }
+
+    private static func recoveryLine(for signal: RecoverySignal) -> BriefLine {
+        BriefLine(label: "Regenerácia", value: signal.briefText, qualifier: nil, isProvisional: false)
     }
 
     /// `isProvisional` is always `false` here, unlike HRV/RHR: SpO2's

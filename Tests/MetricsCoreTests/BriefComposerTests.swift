@@ -2,6 +2,30 @@ import Foundation
 import Testing
 @testable import MetricsCore
 
+@Test func briefComposerAddsOneRecoveryLineWhenSignalIsAvailable() {
+    let summary = NightSummary(
+        sleep: sevenHoursTwelveMinutesSleep(),
+        hrv: HRVStatus(value: 40, level: .low, confidence: .high),
+        rhr: RHRStatus(value: 65, level: .elevated, confidence: .high),
+        spo2: nil
+    )
+
+    let lines = BriefComposer.compose(from: summary).lines.filter { $0.label == "Regenerácia" }
+
+    #expect(lines == [BriefLine(label: "Regenerácia", value: "nižšia než obvykle", qualifier: nil, isProvisional: false)])
+}
+
+@Test func briefComposerOmitsRecoveryLineWhenSignalIsUnavailable() {
+    let summary = NightSummary(
+        sleep: sevenHoursTwelveMinutesSleep(),
+        hrv: HRVStatus(value: 40, level: .low, confidence: .low),
+        rhr: RHRStatus(value: 65, level: .elevated, confidence: .high),
+        spo2: nil
+    )
+
+    #expect(BriefComposer.compose(from: summary).lines.allSatisfy { $0.label != "Regenerácia" })
+}
+
 private func t(_ isoDate: String) -> Date {
     ISO8601DateFormatter().date(from: isoDate)!
 }
@@ -25,11 +49,12 @@ private func sevenHoursTwelveMinutesSleep() -> SleepSession {
     let content = BriefComposer.compose(from: summary)
 
     #expect(content.title == "Dobré ráno")
-    #expect(content.lines.count == 4)
+    #expect(content.lines.count == 5)
     #expect(content.lines[0] == BriefLine(label: "Spánok", value: "7 h 12 min", qualifier: nil, isProvisional: false))
     #expect(content.lines[1].label == "HRV")
     #expect(content.lines[2].label == "Pokojový pulz")
-    #expect(content.lines[3].label == "SpO₂")
+    #expect(content.lines[3].label == "Regenerácia")
+    #expect(content.lines[4].label == "SpO₂")
 }
 
 @Test func briefComposerDisplaysActualAsleepDurationInsteadOfSessionBounds() {
@@ -102,7 +127,7 @@ private func sevenHoursTwelveMinutesSleep() -> SleepSession {
     #expect(content.lines[1].isProvisional == false)
 }
 
-@Test func briefComposerNeverExceedsFourLines() {
+@Test func briefComposerNeverExceedsFiveLines() {
     let summary = NightSummary(
         sleep: sevenHoursTwelveMinutesSleep(),
         hrv: HRVStatus(value: 48, level: .normal, confidence: .high),
@@ -112,7 +137,7 @@ private func sevenHoursTwelveMinutesSleep() -> SleepSession {
 
     let content = BriefComposer.compose(from: summary)
 
-    #expect(content.lines.count <= 4)
+    #expect(content.lines.count <= 5)
 }
 
 @Test func briefRendererFormatsContentWithQualifiersAndProvisionalSuffix() {

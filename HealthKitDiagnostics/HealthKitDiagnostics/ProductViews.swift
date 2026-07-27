@@ -36,6 +36,10 @@ struct TodayView: View {
                 }
                 .buttonStyle(.plain)
 
+                if let recovery = store.snapshot.recovery {
+                    recoveryCard(recovery)
+                }
+
                 NavigationLink {
                     HRVDetailView(store: store)
                 } label: {
@@ -169,6 +173,22 @@ struct TodayView: View {
                     .font(.caption)
                     .foregroundStyle(AppTheme.secondaryText)
             }
+        }
+        .cardStyle()
+    }
+
+    private func recoveryCard(_ signal: RecoverySignal) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Label("Regenerácia", systemImage: "heart.text.square.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(AppTheme.accent)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Circle().fill(recoveryColor(signal.level)).frame(width: 9, height: 9)
+                Text(signal.briefText).font(.title3.weight(.semibold))
+            }
+            Text("Interpretácia HRV a pokojového pulzu voči vašej histórii")
+                .font(.caption2)
+                .foregroundStyle(AppTheme.secondaryText)
         }
         .cardStyle()
     }
@@ -489,6 +509,14 @@ func rhrColor(_ level: RHRStatusLevel) -> Color {
     switch level {
     case .normal, .suppressed: AppTheme.statusNormal
     case .elevated: AppTheme.statusLow
+    }
+}
+
+func recoveryColor(_ level: RecoverySignalLevel) -> Color {
+    switch level {
+    case .strained: AppTheme.statusLow
+    case .mixed: AppTheme.accent
+    case .typical, .favorable: AppTheme.statusNormal
     }
 }
 
