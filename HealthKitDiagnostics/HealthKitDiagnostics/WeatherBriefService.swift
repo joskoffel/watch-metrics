@@ -3,6 +3,14 @@ import Foundation
 import WeatherKit
 import WatchMetricsSupport
 
+/// WeatherKit requires a paid Apple Developer Program signing team. Keep the
+/// shell isolated behind this switch so enabling it later only requires
+/// enabling the capability in `project.yml` and setting this to `true`.
+private enum WeatherFeatureConfiguration {
+    static let isWeatherKitEnabled = false
+    static let unavailableStatus = "WeatherKit vyžaduje Apple Developer Program"
+}
+
 struct WeatherSummary: Equatable, Sendable {
     let emoji: String
     let symbolName: String
@@ -36,6 +44,10 @@ enum WeatherConditionMapper {
     private(set) var lastSymbolName = "cloud.sun.fill"
 
     func currentSummary() async -> WeatherSummary? {
+        guard WeatherFeatureConfiguration.isWeatherKitEnabled else {
+            recordStatus(WeatherFeatureConfiguration.unavailableStatus)
+            return nil
+        }
         guard let location = await locationProvider.usableLocation() else {
             recordStatus("Poloha nie je dostupná")
             return nil
