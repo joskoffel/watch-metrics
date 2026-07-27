@@ -48,10 +48,7 @@ public enum BriefScheduling {
             // "no main sleep yet" or "already delivered" result.
             return tomorrowsEarliestDelivery(from: now, calendar: calendar)
         case nil:
-            // No prior result to react to — check again soon and let that
-            // first real evaluation drive the retry ladder from there,
-            // rather than trying to guess today-vs-tomorrow here.
-            return now.addingTimeInterval(BriefConstants.retryInterval)
+            return firstRefreshDate(from: now, calendar: calendar)
         }
     }
 
@@ -70,6 +67,19 @@ public enum BriefScheduling {
         return proposed <= cutoff
             ? proposed
             : tomorrowsEarliestDelivery(from: now, calendar: calendar)
+    }
+
+    private static func firstRefreshDate(from now: Date, calendar: Calendar) -> Date {
+        let today = calendar.startOfDay(for: now)
+        guard
+            let earliest = calendar.date(bySettingHour: BriefConstants.earliestDeliveryHour, minute: BriefConstants.earliestDeliveryMinute, second: 0, of: today),
+            let latest = calendar.date(bySettingHour: BriefConstants.latestDeliveryHour, minute: BriefConstants.latestDeliveryMinute, second: 0, of: today)
+        else {
+            return now.addingTimeInterval(BriefConstants.retryInterval)
+        }
+        if now < earliest { return earliest }
+        if now > latest { return tomorrowsEarliestDelivery(from: now, calendar: calendar) }
+        return retryDate(now: now, calendar: calendar, after: BriefConstants.retryInterval)
     }
 
     private static func tomorrowsEarliestDelivery(from now: Date, calendar: Calendar) -> Date {

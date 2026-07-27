@@ -10,6 +10,9 @@ struct BriefDiagnosticSnapshot {
     let lastOutcome: String?
     let nextRefreshDate: Date?
     let schedulingError: String?
+    let lastObserverTriggerDate: Date?
+    let lastObserverOutcome: String?
+    let sleepBackgroundDeliveryStatus: String?
 }
 
 struct BriefDiagnosticsStore {
@@ -21,6 +24,9 @@ struct BriefDiagnosticsStore {
         static let lastOutcome = "BriefDiagnostics.lastOutcome"
         static let nextRefreshDate = "BriefDiagnostics.nextRefreshDate"
         static let schedulingError = "BriefDiagnostics.schedulingError"
+        static let lastObserverTriggerDate = "BriefDiagnostics.lastObserverTriggerDate"
+        static let lastObserverOutcome = "BriefDiagnostics.lastObserverOutcome"
+        static let sleepBackgroundDeliveryStatus = "BriefDiagnostics.sleepBackgroundDeliveryStatus"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -49,13 +55,32 @@ struct BriefDiagnosticsStore {
         }
     }
 
+    func recordObserverTrigger(at date: Date) {
+        defaults.set(date, forKey: Key.lastObserverTriggerDate)
+    }
+
+    func recordObserverOutcome(_ outcome: String) {
+        defaults.set(outcome, forKey: Key.lastObserverOutcome)
+    }
+
+    func recordSleepBackgroundDelivery(success: Bool, errorDescription: String?) {
+        if let errorDescription {
+            defaults.set("Zlyhalo: \(errorDescription)", forKey: Key.sleepBackgroundDeliveryStatus)
+        } else {
+            defaults.set(success ? "Aktívne" : "WatchOS odmietol", forKey: Key.sleepBackgroundDeliveryStatus)
+        }
+    }
+
     func snapshot() -> BriefDiagnosticSnapshot {
         BriefDiagnosticSnapshot(
             lastAttemptDate: defaults.object(forKey: Key.lastAttemptDate) as? Date,
             lastAttemptSource: defaults.string(forKey: Key.lastAttemptSource),
             lastOutcome: defaults.string(forKey: Key.lastOutcome),
             nextRefreshDate: defaults.object(forKey: Key.nextRefreshDate) as? Date,
-            schedulingError: defaults.string(forKey: Key.schedulingError)
+            schedulingError: defaults.string(forKey: Key.schedulingError),
+            lastObserverTriggerDate: defaults.object(forKey: Key.lastObserverTriggerDate) as? Date,
+            lastObserverOutcome: defaults.string(forKey: Key.lastObserverOutcome),
+            sleepBackgroundDeliveryStatus: defaults.string(forKey: Key.sleepBackgroundDeliveryStatus)
         )
     }
 

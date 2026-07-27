@@ -6,10 +6,8 @@ import WatchKit
 /// `WKApplication.scheduleBackgroundRefresh`, and on each fired task runs
 /// the same pipeline `BriefRunner`/`BriefDebugPanel` use, then reschedules
 /// per `BriefScheduling.nextRefreshDate` based on the complete attempt result.
-/// `HKObserverQuery` is deliberately not used here — see D1: "longest
-/// session of the night" can't be known until the night window is over, so
-/// polling at fixed points is the only correct trigger, not an
-/// event-on-session-end one.
+/// An observer is only an additional wake-up signal. D1's main-sleep and
+/// delivery decision remain entirely inside `BriefRunner.runScheduled()`.
 @MainActor
 enum BriefScheduler {
     private static let diagnostics = BriefDiagnosticsStore()
@@ -51,16 +49,31 @@ enum BriefScheduler {
         task.setTaskCompletedWithSnapshot(false)
     }
 
-    private static func performAutomaticAttempt(source: String, now: Date) async {
-        guard !isAutomaticAttemptInFlight else { return }
+    static func handleHealthKitObserver() async {
+        let now = Date()
+        diagnostics.recordObserverTrigger(at: now)
+        let didRun = await performAutomaticAttempt(source: "HealthKitObserver", now: now)
+        if !didRun {
+            diagnostics.recordObserverOutcome("Čaká na prebiehajúci pokus")
+            scheduleInitialRefresh()
+        }
+    }
+
+    @discardableResult
+    private static func performAutomaticAttempt(source: String, now: Date) async -> Bool {
+        guard !isAutomaticAttemptInFlight else { return false }
         isAutomaticAttemptInFlight = true
         defer { isAutomaticAttemptInFlight = false }
 
         diagnostics.recordAttemptStarted(at: now, source: source)
         let result = await BriefRunner().runScheduled()
         diagnostics.recordAttemptFinished(result)
+        if source == "HealthKitObserver" {
+            diagnostics.recordObserverOutcome(diagnostics.snapshot().lastOutcome ?? "Dokončené")
+        }
 
         let nextDate = BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, result: result)
         scheduleNextRefresh(preferredDate: nextDate)
+        return true
     }
 }

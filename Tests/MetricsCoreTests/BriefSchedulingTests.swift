@@ -86,13 +86,31 @@ private func at(_ calendar: Calendar, year: Int = 2026, month: Int = 7, day: Int
     #expect(next == at(calendar, day: 17, hour: 6, minute: 30))
 }
 
-@Test func briefSchedulingNoPriorDecisionSchedulesShortlyAfterNow() {
+@Test func briefSchedulingFirstRefreshBeforeMorningWindowUsesTodaysEarliestDelivery() {
     let calendar = utcCalendar()
     let now = at(calendar, day: 16, hour: 3, minute: 0)
 
     let next = BriefScheduling.nextRefreshDate(now: now, calendar: calendar, result: nil)
 
-    #expect(next == at(calendar, day: 16, hour: 3, minute: 30))
+    #expect(next == at(calendar, day: 16, hour: 6, minute: 30))
+}
+
+@Test func briefSchedulingFirstRefreshDuringMorningWindowUsesSafeRetry() {
+    let calendar = utcCalendar()
+    let now = at(calendar, day: 16, hour: 7, minute: 0)
+
+    let next = BriefScheduling.nextRefreshDate(now: now, calendar: calendar, result: nil)
+
+    #expect(next == at(calendar, day: 16, hour: 7, minute: 30))
+}
+
+@Test func briefSchedulingFirstRefreshAfterCutoffUsesTomorrowsEarliestDelivery() {
+    let calendar = utcCalendar()
+    let now = at(calendar, day: 16, hour: 10, minute: 1)
+
+    let next = BriefScheduling.nextRefreshDate(now: now, calendar: calendar, result: nil)
+
+    #expect(next == at(calendar, day: 17, hour: 6, minute: 30))
 }
 
 @Test func foregroundActivationAttemptsOnlyDuringTheMorningDeliveryWindow() {

@@ -21,14 +21,14 @@ final class BriefRunner {
     private(set) var isLoading = false
 
     func runScheduled() async -> BriefRunResult {
-        await run(enforceDedupe: true)
+        await run(enforceDedupe: true, requestsNotificationAuthorization: false)
     }
 
     func runDebug() async -> BriefRunResult {
-        await run(enforceDedupe: false)
+        await run(enforceDedupe: false, requestsNotificationAuthorization: true)
     }
 
-    private func run(enforceDedupe: Bool) async -> BriefRunResult {
+    private func run(enforceDedupe: Bool, requestsNotificationAuthorization: Bool) async -> BriefRunResult {
         isLoading = true
         defer { isLoading = false }
 
@@ -56,7 +56,9 @@ final class BriefRunner {
         switch decision {
         case .deliver(let summary):
             do {
-                try await notifier.requestAuthorization()
+                if requestsNotificationAuthorization {
+                    try await notifier.requestAuthorization()
+                }
                 try await notifier.notify(BriefComposer.compose(from: summary))
                 store.markDelivered(onDay: summary.sleep.end)
                 statusText = "Doručené"

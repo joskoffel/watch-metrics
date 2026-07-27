@@ -57,6 +57,9 @@ struct BriefDebugPanel: View {
             diagnosticLine("Posledný", value: timestamp(diagnostics.lastAttemptDate, with: diagnostics.lastAttemptSource))
             diagnosticLine("Výsledok", value: diagnostics.lastOutcome ?? "Zatiaľ žiadny")
             diagnosticLine("Ďalší", value: timestamp(diagnostics.nextRefreshDate))
+            diagnosticLine("Sleep observer", value: timestamp(diagnostics.lastObserverTriggerDate))
+            diagnosticLine("Observer výsledok", value: diagnostics.lastObserverOutcome ?? "Zatiaľ žiadny")
+            diagnosticLine("Sleep background", value: diagnostics.sleepBackgroundDeliveryStatus ?? "Neoverené")
             if let error = diagnostics.schedulingError {
                 diagnosticLine("Plánovanie", value: "Zlyhalo: \(error)")
             }

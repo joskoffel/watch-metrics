@@ -5,8 +5,11 @@ import WatchKit
 /// to `BriefScheduler.handle(_:)`. Any other background task kind (none
 /// expected in this app) is completed immediately rather than left hanging.
 final class BriefAppDelegate: NSObject, WKApplicationDelegate {
+    private let sleepBriefObserver = SleepBriefObserver()
+
     func applicationDidFinishLaunching() {
         BriefScheduler.scheduleInitialRefresh()
+        sleepBriefObserver.start()
     }
 
     func handle(_ backgroundTasks: Set<WKRefreshBackgroundTask>) {
