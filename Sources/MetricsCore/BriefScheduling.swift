@@ -5,6 +5,31 @@ import Foundation
 /// `BriefDeliveryPolicy` because notification delivery can fail after a
 /// `.deliver` decision and must still schedule a retry.
 public enum BriefScheduling {
+    /// Whether activating the app should immediately run the authoritative
+    /// scheduled brief pipeline. This deliberately shares the delivery
+    /// window with `BriefDeliveryPolicy`: foreground is a fallback attempt,
+    /// never a second notification mechanism.
+    public static func shouldAttemptOnForegroundActivation(now: Date, calendar: Calendar) -> Bool {
+        let today = calendar.startOfDay(for: now)
+        guard
+            let earliest = calendar.date(
+                bySettingHour: BriefConstants.earliestDeliveryHour,
+                minute: BriefConstants.earliestDeliveryMinute,
+                second: 0,
+                of: today
+            ),
+            let latest = calendar.date(
+                bySettingHour: BriefConstants.latestDeliveryHour,
+                minute: BriefConstants.latestDeliveryMinute,
+                second: 0,
+                of: today
+            )
+        else {
+            return false
+        }
+        return now >= earliest && now <= latest
+    }
+
     /// - Parameters:
     ///   - now: current time.
     ///   - calendar: must carry the local time zone, same DST-safety

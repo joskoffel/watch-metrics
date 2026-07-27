@@ -9,6 +9,7 @@ import MetricsCore
 /// background scheduling (step 7) still needs real overnight runs to confirm.
 struct BriefDebugPanel: View {
     @State private var runner = BriefRunner()
+    @State private var diagnostics = BriefDiagnosticsStore().snapshot()
 
     var body: some View {
         ScrollView {
@@ -19,6 +20,8 @@ struct BriefDebugPanel: View {
 
                 triggerButton
 
+                automaticStatusCard
+
                 if let decision = runner.lastDecision {
                     decisionCard(decision)
                 }
@@ -27,6 +30,7 @@ struct BriefDebugPanel: View {
             .padding(.top, 2)
         }
         .background(AppTheme.background.ignoresSafeArea())
+        .onAppear { diagnostics = BriefDiagnosticsStore().snapshot() }
     }
 
     private var triggerButton: some View {
@@ -44,6 +48,38 @@ struct BriefDebugPanel: View {
         .buttonStyle(.borderedProminent)
         .tint(AppTheme.accent)
         .disabled(runner.isLoading)
+    }
+
+    private var automaticStatusCard: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Automatické pokusy")
+                .font(.footnote.weight(.semibold))
+            diagnosticLine("Posledný", value: timestamp(diagnostics.lastAttemptDate, with: diagnostics.lastAttemptSource))
+            diagnosticLine("Výsledok", value: diagnostics.lastOutcome ?? "Zatiaľ žiadny")
+            diagnosticLine("Ďalší", value: timestamp(diagnostics.nextRefreshDate))
+            if let error = diagnostics.schedulingError {
+                diagnosticLine("Plánovanie", value: "Zlyhalo: \(error)")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            AppTheme.cardBackground,
+            in: RoundedRectangle(cornerRadius: AppTheme.cardCornerRadius, style: .continuous)
+        )
+    }
+
+    private func diagnosticLine(_ label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label).font(.caption2.weight(.semibold))
+            Text(value).font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+
+    private func timestamp(_ date: Date?, with source: String? = nil) -> String {
+        guard let date else { return "Zatiaľ žiadny" }
+        let formatted = date.formatted(date: .abbreviated, time: .shortened)
+        return source.map { "\(formatted) (\($0))" } ?? formatted
     }
 
     /// Shows the policy's raw decision category at a glance (color-coded

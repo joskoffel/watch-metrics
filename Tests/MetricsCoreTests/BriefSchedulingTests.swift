@@ -95,6 +95,34 @@ private func at(_ calendar: Calendar, year: Int = 2026, month: Int = 7, day: Int
     #expect(next == at(calendar, day: 16, hour: 3, minute: 30))
 }
 
+@Test func foregroundActivationAttemptsOnlyDuringTheMorningDeliveryWindow() {
+    let calendar = utcCalendar()
+
+    #expect(BriefScheduling.shouldAttemptOnForegroundActivation(
+        now: at(calendar, day: 16, hour: 6, minute: 30), calendar: calendar
+    ))
+    #expect(BriefScheduling.shouldAttemptOnForegroundActivation(
+        now: at(calendar, day: 16, hour: 10, minute: 0), calendar: calendar
+    ))
+    #expect(!BriefScheduling.shouldAttemptOnForegroundActivation(
+        now: at(calendar, day: 16, hour: 6, minute: 29), calendar: calendar
+    ))
+    #expect(!BriefScheduling.shouldAttemptOnForegroundActivation(
+        now: at(calendar, day: 16, hour: 10, minute: 1), calendar: calendar
+    ))
+}
+
+@Test func foregroundAndBackgroundAttemptsUseTheSameNextRefreshRule() {
+    let calendar = utcCalendar()
+    let now = at(calendar, day: 16, hour: 7, minute: 0)
+
+    let foregroundNext = BriefScheduling.nextRefreshDate(now: now, calendar: calendar, result: .delivered)
+    let backgroundNext = BriefScheduling.nextRefreshDate(now: now, calendar: calendar, result: .delivered)
+
+    #expect(foregroundNext == at(calendar, day: 17, hour: 6, minute: 30))
+    #expect(backgroundNext == foregroundNext)
+}
+
 @Test func briefSchedulingTomorrowsEarliestDeliverySurvivesDaylightSavingSpringForward() {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "Europe/Bratislava")!

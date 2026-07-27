@@ -30,6 +30,29 @@ private func at(_ calendar: Calendar, day: Int, hour: Int, minute: Int) -> Date 
     #expect(decision == .skip(.alreadyDelivered))
 }
 
+@Test func foregroundDeliveryIsDeduplicatedForTheSameMainSleep() {
+    let calendar = utcCalendar()
+    let main = SleepSession(
+        start: at(calendar, day: 15, hour: 22, minute: 0),
+        end: at(calendar, day: 16, hour: 5, minute: 0),
+        asleepDuration: 7 * 60 * 60
+    )
+    let now = at(calendar, day: 16, hour: 7, minute: 0)
+    let metrics = HRVStatus(value: 48, level: .normal, confidence: .high)
+
+    let first = BriefDeliveryPolicy.evaluate(
+        now: now, calendar: calendar, sessions: [main], hrv: metrics, rhr: nil, spo2: nil,
+        isAlreadyDelivered: { _ in false }
+    )
+    let second = BriefDeliveryPolicy.evaluate(
+        now: now, calendar: calendar, sessions: [main], hrv: metrics, rhr: nil, spo2: nil,
+        isAlreadyDelivered: { date in date == main.end }
+    )
+
+    #expect(first == .deliver(NightSummary(sleep: main, hrv: metrics, rhr: nil, spo2: nil)))
+    #expect(second == .skip(.alreadyDelivered))
+}
+
 @Test func briefDeliveryPolicyDedupeChecksMainSleepEndNotNow() {
     // Main sleep ends 23:15 on day 16 (before midnight); a prior run already
     // delivered for that day. The next morning's check runs with `now` on

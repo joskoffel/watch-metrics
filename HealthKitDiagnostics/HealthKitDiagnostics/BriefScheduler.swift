@@ -12,12 +12,18 @@ import WatchKit
 /// event-on-session-end one.
 @MainActor
 enum BriefScheduler {
+    private static let diagnostics = BriefDiagnosticsStore()
+    private static var isAutomaticAttemptInFlight = false
+
     static func scheduleNextRefresh(preferredDate: Date) {
-        WKApplication.shared().scheduleBackgroundRefresh(withPreferredDate: preferredDate, userInfo: nil) { _ in
-            // Best-effort: watchOS may deny scheduling under budget
-            // pressure. Nothing actionable here — the next app launch
-            // (`scheduleInitialRefresh`) or fired task (`handle`) will just
-            // try arming the next one again.
+        diagnostics.recordNextRefresh(preferredDate)
+        WKApplication.shared().scheduleBackgroundRefresh(withPreferredDate: preferredDate, userInfo: nil) { error in
+            Task { @MainActor in
+                // Scheduling is best-effort, but the failure is actionable:
+                // retain it for Developer diagnostics instead of silently
+                // discarding it. A foreground activation remains a fallback.
+                diagnostics.recordSchedulingError(error)
+            }
         }
     }
 
@@ -26,15 +32,35 @@ enum BriefScheduler {
         scheduleNextRefresh(preferredDate: BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, result: nil))
     }
 
+    /// Foreground is a fallback for watchOS's best-effort background budget.
+    /// It invokes the same deduplicating scheduled runner, never a separate
+    /// notification path, and always schedules from the completed result.
+    static func handleForegroundActivation() async {
+        let now = Date()
+        guard BriefScheduling.shouldAttemptOnForegroundActivation(now: now, calendar: .current) else {
+            scheduleInitialRefresh()
+            return
+        }
+        await performAutomaticAttempt(source: "Foreground", now: now)
+    }
+
     /// Call from `WKApplicationDelegate.handle(_:)` for each
     /// `WKApplicationRefreshBackgroundTask`.
     static func handle(_ task: WKApplicationRefreshBackgroundTask) async {
-        let runner = BriefRunner()
-        let result = await runner.runScheduled()
+        await performAutomaticAttempt(source: "Background", now: Date())
+        task.setTaskCompletedWithSnapshot(false)
+    }
+
+    private static func performAutomaticAttempt(source: String, now: Date) async {
+        guard !isAutomaticAttemptInFlight else { return }
+        isAutomaticAttemptInFlight = true
+        defer { isAutomaticAttemptInFlight = false }
+
+        diagnostics.recordAttemptStarted(at: now, source: source)
+        let result = await BriefRunner().runScheduled()
+        diagnostics.recordAttemptFinished(result)
 
         let nextDate = BriefScheduling.nextRefreshDate(now: Date(), calendar: .current, result: result)
         scheduleNextRefresh(preferredDate: nextDate)
-
-        task.setTaskCompletedWithSnapshot(false)
     }
 }
