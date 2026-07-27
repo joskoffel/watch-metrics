@@ -10,11 +10,13 @@ struct WatchMetricsApp: App {
         WindowGroup {
             WatchMetricsRootView()
                 .task {
+                    WeatherLocationProvider.shared.requestForegroundAuthorizationIfNeeded()
                     await BriefScheduler.handleForegroundActivation()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     guard newPhase == .active else { return }
                     Task {
+                        WeatherLocationProvider.shared.requestForegroundAuthorizationIfNeeded()
                         await BriefScheduler.handleForegroundActivation()
                     }
                 }

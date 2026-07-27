@@ -13,6 +13,7 @@ struct BriefDiagnosticSnapshot {
     let lastObserverTriggerDate: Date?
     let lastObserverOutcome: String?
     let sleepBackgroundDeliveryStatus: String?
+    let weatherStatus: String?
 }
 
 struct BriefDiagnosticsStore {
@@ -27,6 +28,7 @@ struct BriefDiagnosticsStore {
         static let lastObserverTriggerDate = "BriefDiagnostics.lastObserverTriggerDate"
         static let lastObserverOutcome = "BriefDiagnostics.lastObserverOutcome"
         static let sleepBackgroundDeliveryStatus = "BriefDiagnostics.sleepBackgroundDeliveryStatus"
+        static let weatherStatus = "BriefDiagnostics.weatherStatus"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -71,6 +73,10 @@ struct BriefDiagnosticsStore {
         }
     }
 
+    func recordWeatherStatus(_ status: String) {
+        defaults.set(status, forKey: Key.weatherStatus)
+    }
+
     func snapshot() -> BriefDiagnosticSnapshot {
         BriefDiagnosticSnapshot(
             lastAttemptDate: defaults.object(forKey: Key.lastAttemptDate) as? Date,
@@ -80,7 +86,8 @@ struct BriefDiagnosticsStore {
             schedulingError: defaults.string(forKey: Key.schedulingError),
             lastObserverTriggerDate: defaults.object(forKey: Key.lastObserverTriggerDate) as? Date,
             lastObserverOutcome: defaults.string(forKey: Key.lastObserverOutcome),
-            sleepBackgroundDeliveryStatus: defaults.string(forKey: Key.sleepBackgroundDeliveryStatus)
+            sleepBackgroundDeliveryStatus: defaults.string(forKey: Key.sleepBackgroundDeliveryStatus),
+            weatherStatus: defaults.string(forKey: Key.weatherStatus)
         )
     }
 

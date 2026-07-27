@@ -344,6 +344,8 @@ struct MetricLineChart: View {
 
 struct SettingsView: View {
     let store: DailyOverviewStore
+    @State private var weatherStatus = WeatherBriefService.shared.lastStatus
+    @State private var weatherSymbolName = WeatherBriefService.shared.lastSymbolName
 
     var body: some View {
         List {
@@ -361,6 +363,15 @@ struct SettingsView: View {
                 Text(store.healthKitAccessText)
                     .font(.caption)
             }
+            Section("Počasie") {
+                LabeledContent("Poloha", value: WeatherLocationProvider.shared.managerAuthorizationText)
+                LabeledContent("Cache polohy", value: WeatherLocationProvider.shared.cachedLocationAgeText())
+                Label(weatherStatus, systemImage: weatherSymbolName)
+                    .font(.caption2)
+                Text("Weather by Apple")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             Section("O aplikácii") {
                 LabeledContent("Watch Metrics", value: "1.0")
                 Text("Denný prehľad údajov zo Zdravia. Nie je zdravotníckou pomôckou.")
@@ -373,7 +384,13 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Nastavenia")
-        .task { await store.refreshNotificationAccess() }
+        .task {
+            WeatherLocationProvider.shared.requestForegroundAuthorizationIfNeeded()
+            await store.refreshNotificationAccess()
+            _ = await WeatherBriefService.shared.currentSummary()
+            weatherStatus = WeatherBriefService.shared.lastStatus
+            weatherSymbolName = WeatherBriefService.shared.lastSymbolName
+        }
     }
 }
 
