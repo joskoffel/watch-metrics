@@ -14,9 +14,9 @@ targets:
       - path: HealthKitDiagnostics
     dependencies:
       - package: MetricsCore
-        product: MetricsCore
-      - package: MetricsCore
-        product: WatchMetricsSupport
+        products:
+          - MetricsCore
+          - WatchMetricsSupport
       - target: WatchMetricsWidgetExtension
         embed: true
     entitlements:
