@@ -4,19 +4,22 @@ public struct NightAuditFacts: Equatable, Sendable {
     public let rawRRCount: Int
     public let acceptedRRCount: Int
     public let hasRMSSD: Bool
+    public let hasUnusableHeartbeatSeries: Bool
 
     public init(
         sdnnSampleCount: Int,
         heartbeatSeriesCount: Int,
         rawRRCount: Int,
         acceptedRRCount: Int,
-        hasRMSSD: Bool
+        hasRMSSD: Bool,
+        hasUnusableHeartbeatSeries: Bool = false
     ) {
         self.sdnnSampleCount = sdnnSampleCount
         self.heartbeatSeriesCount = heartbeatSeriesCount
         self.rawRRCount = rawRRCount
         self.acceptedRRCount = acceptedRRCount
         self.hasRMSSD = hasRMSSD
+        self.hasUnusableHeartbeatSeries = hasUnusableHeartbeatSeries
     }
 
     public var acceptanceRatio: Double? {
@@ -25,6 +28,7 @@ public struct NightAuditFacts: Equatable, Sendable {
 
     public var isSparseOrFaulty: Bool {
         heartbeatSeriesCount == 0 ||
+        hasUnusableHeartbeatSeries ||
         acceptedRRCount < 2 ||
         (acceptanceRatio.map { $0 < 0.7 } ?? false)
     }

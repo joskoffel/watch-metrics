@@ -18,7 +18,8 @@ struct HRVDataAuditNight: Identifiable {
             heartbeatSeriesCount: heartbeat.seriesCount,
             rawRRCount: heartbeat.rawIntervals.count,
             acceptedRRCount: heartbeat.acceptedIntervals.count,
-            hasRMSSD: heartbeat.rmssd != nil
+            hasRMSSD: heartbeat.rmssd != nil,
+            hasUnusableHeartbeatSeries: !heartbeat.unusableSeries.isEmpty
         )
     }
 }

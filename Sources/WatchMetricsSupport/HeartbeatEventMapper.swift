@@ -13,9 +13,18 @@ public struct HeartbeatEvent: Equatable, Sendable {
     }
 }
 
-public enum HeartbeatEventMappingError: Error, Equatable {
+public enum HeartbeatEventMappingError: LocalizedError, Equatable {
     case invalidTime
     case nonIncreasingTime
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidTime:
+            "neplatná kumulatívna časová hodnota heartbeat eventu"
+        case .nonIncreasingTime:
+            "heartbeat časy nie sú striktne rastúce"
+        }
+    }
 }
 
 public enum HeartbeatEventMapper {

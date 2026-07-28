@@ -8,6 +8,15 @@ struct HeartbeatNightResult {
     let rawIntervals: [RRInterval]
     let acceptedIntervals: [RRInterval]
     let rmssd: Double?
+    let unusableSeries: [HeartbeatSeriesFailure]
+}
+
+struct HeartbeatSeriesFailure: Identifiable {
+    let seriesIndex: Int
+    let seriesStart: Date
+    let reason: String
+
+    var id: Int { seriesIndex }
 }
 
 @MainActor
@@ -39,19 +48,31 @@ final class HeartbeatSeriesService {
         var rawSeries: [[RRInterval]] = []
         var acceptedSeries: [[RRInterval]] = []
 
-        for sample in samples {
+        var unusableSeries: [HeartbeatSeriesFailure] = []
+        for (index, sample) in samples.enumerated() {
             try Task.checkCancellation()
             let events = try await fetchEvents(in: sample)
-            let raw = try HeartbeatEventMapper.intervals(from: events)
-            rawSeries.append(raw)
-            acceptedSeries.append(RRArtifactFilter.filter(raw))
+            do {
+                let raw = try HeartbeatEventMapper.intervals(from: events)
+                rawSeries.append(raw)
+                acceptedSeries.append(RRArtifactFilter.filter(raw))
+            } catch let error as HeartbeatEventMappingError {
+                unusableSeries.append(
+                    HeartbeatSeriesFailure(
+                        seriesIndex: index + 1,
+                        seriesStart: sample.startDate,
+                        reason: error.localizedDescription
+                    )
+                )
+            }
         }
 
         return HeartbeatNightResult(
             seriesCount: samples.count,
             rawIntervals: rawSeries.flatMap { $0 },
             acceptedIntervals: acceptedSeries.flatMap { $0 },
-            rmssd: SeriesRMSSDAggregator.calculate(from: acceptedSeries)
+            rmssd: SeriesRMSSDAggregator.calculate(from: acceptedSeries),
+            unusableSeries: unusableSeries
         )
     }
 
@@ -93,52 +114,89 @@ final class HeartbeatSeriesService {
         let cancellation = HealthQueryCancellation(healthStore: healthStore)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
+                collector.installCompletion { continuation.resume(with: $0) }
                 let query = HKHeartbeatSeriesQuery(heartbeatSeries: sample) {
                     _, timeSinceSeriesStart, precededByGap, done, error in
-                    Task {
-                        if let error {
-                            if let result = await collector.finish(with: .failure(error)) {
-                                continuation.resume(with: result)
-                            }
-                            return
-                        }
-                        await collector.append(
-                            HeartbeatEvent(
-                                timeSinceSeriesStart: timeSinceSeriesStart,
-                                precededByGap: precededByGap
-                            )
+                    let event = error == nil
+                        ? HeartbeatEvent(
+                            timeSinceSeriesStart: timeSinceSeriesStart,
+                            precededByGap: precededByGap
                         )
-                        if done, let result = await collector.finishSuccessfully() {
-                            continuation.resume(with: result)
-                        }
-                    }
+                        : nil
+                    collector.receive(event: event, done: done, error: error)
                 }
                 cancellation.install(query)
                 healthStore.execute(query)
             }
         } onCancel: {
             cancellation.cancel()
+            collector.cancel()
         }
     }
 }
 
-private actor HeartbeatEventCollector {
+/// Synchronous callback-boundary state machine. HealthKit callback order is
+/// preserved because append and `done` are committed under one lock before
+/// the callback returns; no unsequenced Tasks are introduced.
+final class HeartbeatEventCollector: @unchecked Sendable {
+    typealias Completion = (Result<[HeartbeatEvent], Error>) -> Void
+
+    private let lock = NSLock()
     private var events: [HeartbeatEvent] = []
     private var finished = false
+    private var completion: Completion?
+    private var pendingResult: Result<[HeartbeatEvent], Error>?
 
-    func append(_ event: HeartbeatEvent) {
-        guard !finished else { return }
-        events.append(event)
+    func installCompletion(_ completion: @escaping Completion) {
+        lock.lock()
+        if let pendingResult {
+            self.pendingResult = nil
+            lock.unlock()
+            completion(pendingResult)
+        } else if finished {
+            lock.unlock()
+        } else {
+            self.completion = completion
+            lock.unlock()
+        }
     }
 
-    func finishSuccessfully() -> Result<[HeartbeatEvent], Error>? {
-        finish(with: .success(events))
+    func receive(event: HeartbeatEvent?, done: Bool, error: Error?) {
+        var delivery: (Completion, Result<[HeartbeatEvent], Error>)?
+        lock.lock()
+        guard !finished else {
+            lock.unlock()
+            return
+        }
+
+        if let error {
+            delivery = finishLocked(with: .failure(error))
+        } else {
+            if let event { events.append(event) }
+            if done { delivery = finishLocked(with: .success(events)) }
+        }
+        lock.unlock()
+        if let delivery { delivery.0(delivery.1) }
     }
 
-    func finish(with result: Result<[HeartbeatEvent], Error>) -> Result<[HeartbeatEvent], Error>? {
-        guard !finished else { return nil }
+    func cancel() {
+        var delivery: (Completion, Result<[HeartbeatEvent], Error>)?
+        lock.lock()
+        if !finished { delivery = finishLocked(with: .failure(CancellationError())) }
+        lock.unlock()
+        if let delivery { delivery.0(delivery.1) }
+    }
+
+    private func finishLocked(
+        with result: Result<[HeartbeatEvent], Error>
+    ) -> (Completion, Result<[HeartbeatEvent], Error>)? {
         finished = true
-        return result
+        guard let completion else {
+            pendingResult = result
+            return nil
+        }
+        self.completion = nil
+        return (completion, result)
     }
 }
 

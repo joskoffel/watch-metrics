@@ -53,7 +53,7 @@ import Testing
 }
 
 @Test func malformedHeartbeatOrderThrowsInsteadOfProducingNegativeRR() {
-    #expect(throws: HeartbeatEventMappingError.self) {
+    #expect(throws: HeartbeatEventMappingError.nonIncreasingTime) {
         try HeartbeatEventMapper.intervals(from: [
             HeartbeatEvent(timeSinceSeriesStart: 1.0, precededByGap: false),
             HeartbeatEvent(timeSinceSeriesStart: 0.8, precededByGap: false)

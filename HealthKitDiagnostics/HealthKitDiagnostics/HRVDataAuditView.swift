@@ -61,6 +61,12 @@ struct HRVDataAuditView: View {
                 .font(.footnote.weight(.semibold))
             Text("SDNN \(metric(night.sdnn)) · RMSSD \(metric(night.heartbeat.rmssd))")
             Text("Série \(night.heartbeat.seriesCount) · RR \(night.heartbeat.acceptedIntervals.count)/\(night.heartbeat.rawIntervals.count) prijatých")
+            ForEach(night.heartbeat.unusableSeries) { failure in
+                Text(
+                    "Séria \(failure.seriesIndex) (\(failure.seriesStart.formatted(date: .omitted, time: .shortened))): \(failure.reason)"
+                )
+                .foregroundStyle(.yellow)
+            }
             if let hr = night.heartRate {
                 Text("HR \(Int(hr.median.rounded())) bpm · low \(hr.robustLow.map { String(Int($0.rounded())) } ?? "—") · tretiny \(coverage(hr))")
                 Text(hr.supportsSettlingTrend ? "Settling trend: použiteľný" : "Settling trend: málo dát")

@@ -21,3 +21,16 @@ import Testing
 @Test func auditSummaryIsNilWithoutResolvedNights() {
     #expect(HRVDataAuditSummary.compute(from: []) == nil)
 }
+
+@Test func unusableHeartbeatSeriesMarksNightAsFaultyWithoutInventingIntervals() {
+    let facts = NightAuditFacts(
+        sdnnSampleCount: 2,
+        heartbeatSeriesCount: 3,
+        rawRRCount: 20,
+        acceptedRRCount: 20,
+        hasRMSSD: true,
+        hasUnusableHeartbeatSeries: true
+    )
+
+    #expect(facts.isSparseOrFaulty)
+}
