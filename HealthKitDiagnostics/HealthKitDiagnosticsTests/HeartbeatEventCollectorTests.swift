@@ -1,4 +1,5 @@
 import Foundation
+import HealthKit
 import Testing
 @testable import WatchMetrics
 import WatchMetricsSupport
@@ -82,4 +83,12 @@ private final class CollectorResultBox: @unchecked Sendable {
 
 private enum CollectorTestError: Error {
     case sample
+}
+
+@Test func heartbeatAuthorizationIncludesSeriesAndItsSDNNParent() {
+    let readTypes = HeartbeatHealthKitTypes.requiredReadTypes
+
+    #expect(readTypes.count == 2)
+    #expect(readTypes.contains(HKSeriesType.heartbeat()))
+    #expect(readTypes.contains(HKQuantityType(.heartRateVariabilitySDNN)))
 }

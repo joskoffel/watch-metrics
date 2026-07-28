@@ -19,8 +19,7 @@ import HealthKit
 final class HeartbeatSeriesDiagnostics {
     private let healthStore = HKHealthStore()
 
-    private let heartbeatSeriesType = HKSeriesType.heartbeat()
-    private let sdnnType = HKQuantityType(.heartRateVariabilitySDNN)
+    private let heartbeatSeriesType = HeartbeatHealthKitTypes.heartbeatSeries
 
     private(set) var statusText = "Not started"
 
@@ -30,10 +29,8 @@ final class HeartbeatSeriesDiagnostics {
             return
         }
 
-        let typesToRead: Set<HKObjectType> = [heartbeatSeriesType, sdnnType]
-
         do {
-            try await requestAuthorization(read: typesToRead)
+            try await requestAuthorization(read: HeartbeatHealthKitTypes.requiredReadTypes)
         } catch {
             statusText = "Authorization error: \(error.localizedDescription)"
             return

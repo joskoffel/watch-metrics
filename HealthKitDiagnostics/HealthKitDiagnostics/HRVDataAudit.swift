@@ -129,12 +129,11 @@ final class HRVDataAuditStore {
     }
 
     private func requestAuthorization() async throws {
-        let readTypes: Set<HKObjectType> = [
+        var readTypes = HeartbeatHealthKitTypes.requiredReadTypes
+        readTypes.formUnion([
             HKCategoryType(.sleepAnalysis),
-            HKSeriesType.heartbeat(),
-            sdnnType,
             heartRateType
-        ]
+        ])
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             healthStore.requestAuthorization(toShare: nil, read: readTypes) { granted, error in
                 if let error {

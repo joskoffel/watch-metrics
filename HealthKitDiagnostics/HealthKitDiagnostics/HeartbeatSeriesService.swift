@@ -3,6 +3,22 @@ import HealthKit
 import MetricsCore
 import WatchMetricsSupport
 
+/// HealthKit validates heartbeat-series authorization together with its
+/// parent SDNN quantity type. Keep this pair canonical so every heartbeat
+/// reader requests the same minimal read-only set.
+enum HeartbeatHealthKitTypes {
+    static var heartbeatSeries: HKSeriesType {
+        HKSeriesType.heartbeat()
+    }
+
+    static var requiredReadTypes: Set<HKObjectType> {
+        [
+            heartbeatSeries,
+            HKQuantityType(.heartRateVariabilitySDNN)
+        ]
+    }
+}
+
 struct HeartbeatNightResult {
     let seriesCount: Int
     let rawIntervals: [RRInterval]
@@ -22,7 +38,7 @@ struct HeartbeatSeriesFailure: Identifiable {
 @MainActor
 final class HeartbeatSeriesService {
     private let healthStore: HKHealthStore
-    private let heartbeatType = HKSeriesType.heartbeat()
+    private let heartbeatType = HeartbeatHealthKitTypes.heartbeatSeries
 
     init(healthStore: HKHealthStore = HKHealthStore()) {
         self.healthStore = healthStore
@@ -30,7 +46,10 @@ final class HeartbeatSeriesService {
 
     func requestAuthorization() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            healthStore.requestAuthorization(toShare: nil, read: [heartbeatType]) { granted, error in
+            healthStore.requestAuthorization(
+                toShare: nil,
+                read: HeartbeatHealthKitTypes.requiredReadTypes
+            ) { granted, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else if granted {
