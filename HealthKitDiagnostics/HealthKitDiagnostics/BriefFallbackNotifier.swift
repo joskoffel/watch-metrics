@@ -67,8 +67,8 @@ struct BriefFallbackNotifier {
             throw BriefNotifierError.authorizationDenied
         }
         let notification = UNMutableNotificationContent()
-        notification.title = content.title
-        notification.body = BriefRenderer.renderLines(content.lines)
+        notification.title = BriefLocalization.title(content)
+        notification.body = BriefLocalization.renderLines(content.lines)
         notification.sound = .default
         let interval = max(plan.fireDate.timeIntervalSinceNow, 1)
         let request = UNNotificationRequest(

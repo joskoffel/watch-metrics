@@ -100,7 +100,7 @@ struct RecoveryHero: View {
             .opacity(0.82)
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("REGENERÁCIA")
+                Text("RECOVERY")
                     .font(.caption2.weight(.bold))
                     .tracking(1.15)
                     .foregroundStyle(style.primary)
@@ -113,7 +113,7 @@ struct RecoveryHero: View {
                     heroStatus(font: .headline)
                 }
 
-                Text("Podľa osobnej histórie HRV a pokojového pulzu")
+                Text("Personal HRV and resting heart rate history")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(3)
@@ -143,7 +143,12 @@ struct RecoveryHero: View {
         }
         .shadow(color: style.primary.opacity(0.22), radius: 18, y: 7)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Regenerácia, \(recoveryHeroText(signal)). Podľa osobnej histórie HRV a pokojového pulzu.")
+        .accessibilityLabel(
+            String.localizedStringWithFormat(
+                String(localized: "Recovery, %@. Based on your personal HRV and resting heart rate history."),
+                recoveryHeroText(signal)
+            )
+        )
         .onAppear(perform: updatePulse)
         .onChange(of: shouldAnimate) { _, _ in updatePulse() }
     }
@@ -348,7 +353,10 @@ struct DashboardMetricTile: View {
 
     private var accessibilityDescription: String {
         if state == .loading {
-            return "\(accessibilityTitle), načítavam"
+            return String.localizedStringWithFormat(
+                String(localized: "%@, loading"),
+                accessibilityTitle
+            )
         }
         guard let value else {
             return "\(accessibilityTitle), \(compactStateMessage(state))"
@@ -397,7 +405,12 @@ struct MorningBriefCapsule: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Ranný brief, \(text)")
+        .accessibilityLabel(
+            String.localizedStringWithFormat(
+                String(localized: "Morning brief, %@"),
+                text
+            )
+        )
     }
 }
 
@@ -444,23 +457,23 @@ private struct RecoveryHeroStyle {
 }
 
 private func recoveryHeroText(_ signal: RecoverySignal?) -> String {
-    guard let signal else { return "Zbieram dáta" }
+    guard let signal else { return String(localized: "Collecting data") }
     return switch signal.level {
-    case .favorable: "Priaznivá"
-    case .typical: "V osobnej norme"
-    case .mixed: "Zmiešaný signál"
-    case .strained: "Nižšia než obvykle"
+    case .favorable: String(localized: "Favorable")
+    case .typical: String(localized: "Within personal range")
+    case .mixed: String(localized: "Mixed signal")
+    case .strained: String(localized: "Lower than usual")
     }
 }
 
 private func compactStateMessage(_ state: DataLoadState) -> String {
     switch state {
-    case .idle: "Čakám na dáta"
-    case .loading: "Načítavam"
-    case .loaded: "Dáta dostupné"
-    case .empty: "Bez dát"
-    case .permissionDenied: "Skontrolujte Zdravie"
-    case .failed: "Načítanie zlyhalo"
+    case .idle: String(localized: "Waiting for data")
+    case .loading: String(localized: "Loading")
+    case .loaded: String(localized: "Data available")
+    case .empty: String(localized: "No data")
+    case .permissionDenied: String(localized: "Check Health")
+    case .failed: String(localized: "Loading failed")
     }
 }
 

@@ -1,0 +1,21 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Daily overview" : {
+      "localizations" : {
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Denný prehľad" } }
+      }
+    },
+    "Opens your daily health overview." : {
+      "localizations" : {
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Otvorí váš denný zdravotný prehľad." } }
+      }
+    },
+    "Watch Metrics" : {
+      "localizations" : {
+        "sk" : { "stringUnit" : { "state" : "translated", "value" : "Watch Metrics" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

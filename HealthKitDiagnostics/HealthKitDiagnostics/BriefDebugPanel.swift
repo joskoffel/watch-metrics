@@ -1,6 +1,7 @@
 import SwiftUI
 import MetricsCore
 
+#if DEBUG
 /// Debug trigger screen (spec step 6): runs the exact same
 /// `BriefDeliveryPolicy`/`BriefNotifier` pipeline a scheduled background
 /// run would, on demand — see `BriefRunner`. Lets the whole pipeline
@@ -67,7 +68,6 @@ struct BriefDebugPanel: View {
             diagnosticLine("Sleep observer", value: timestamp(diagnostics.lastObserverTriggerDate))
             diagnosticLine("Observer výsledok", value: diagnostics.lastObserverOutcome ?? "Zatiaľ žiadny")
             diagnosticLine("Sleep background", value: diagnostics.sleepBackgroundDeliveryStatus ?? "Neoverené")
-            diagnosticLine("Počasie", value: diagnostics.weatherStatus ?? "Zatiaľ nenačítané")
             if let error = diagnostics.schedulingError {
                 diagnosticLine("Plánovanie", value: "Zlyhalo: \(error)")
             }
@@ -144,3 +144,4 @@ struct BriefDebugPanel: View {
         }
     }
 }
+#endif

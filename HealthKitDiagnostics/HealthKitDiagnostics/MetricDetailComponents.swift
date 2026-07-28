@@ -17,7 +17,7 @@ struct MetricVisualTheme {
 
     static let sleep = MetricVisualTheme(
         kind: .sleep,
-        title: "Spánok",
+        title: String(localized: "Sleep"),
         symbol: "bed.double.fill",
         identityColor: AppTheme.dashboardViolet,
         secondaryColor: AppTheme.dashboardBlue
@@ -25,7 +25,7 @@ struct MetricVisualTheme {
 
     static let hrv = MetricVisualTheme(
         kind: .hrv,
-        title: "Nočná HRV",
+        title: String(localized: "Nightly HRV"),
         symbol: "waveform.path.ecg",
         identityColor: AppTheme.dashboardCyan,
         secondaryColor: AppTheme.dashboardCyan.opacity(0.62)
@@ -33,7 +33,7 @@ struct MetricVisualTheme {
 
     static let restingHeartRate = MetricVisualTheme(
         kind: .restingHeartRate,
-        title: "Pokojový pulz",
+        title: String(localized: "Resting heart rate"),
         symbol: "heart.fill",
         identityColor: AppTheme.dashboardMagenta,
         secondaryColor: AppTheme.dashboardRed
@@ -271,17 +271,38 @@ struct MetricDetailHero: View {
 
     private var accessibilityDescription: String {
         if state == .loading {
-            return "\(theme.title), načítavam. Zdroj: \(source)"
+            return String.localizedStringWithFormat(
+                String(localized: "%@, loading. Source: %@"),
+                theme.title,
+                source
+            )
         }
         guard let value else {
-            return "\(theme.title), \(unavailableText). Zdroj: \(source)"
+            return String.localizedStringWithFormat(
+                String(localized: "%@, %@. Source: %@"),
+                theme.title,
+                unavailableText,
+                source
+            )
         }
         let measuredValue = "\(value) \(unit ?? "")"
         guard let status else {
-            return "\(theme.title), \(measuredValue). Zdroj: \(source)"
+            return String.localizedStringWithFormat(
+                String(localized: "%@, %@. Source: %@"),
+                theme.title,
+                measuredValue,
+                source
+            )
         }
         let context = status.context.map { ", \($0)" } ?? ""
-        return "\(theme.title), \(measuredValue), \(status.text)\(context). Zdroj: \(source)"
+        return String.localizedStringWithFormat(
+            String(localized: "%@, %@, %@%@. Source: %@"),
+            theme.title,
+            measuredValue,
+            status.text,
+            context,
+            source
+        )
     }
 }
 
@@ -415,21 +436,21 @@ struct MetricLineChart: View {
     let points: [(Date, Double)]
     let theme: MetricVisualTheme
     var variant: Variant = .primary
-    var unavailableText = "Trend zatiaľ nie je dostupný."
+    var unavailableText = String(localized: "Trend is not available yet.")
 
     var body: some View {
         if points.count >= 2 {
             Chart(points, id: \.0) { point in
                 LineMark(
-                    x: .value("Deň", point.0),
-                    y: .value("Hodnota", point.1)
+                    x: .value(String(localized: "Day"), point.0),
+                    y: .value(String(localized: "Value"), point.1)
                 )
                 .foregroundStyle(chartColor)
                 .lineStyle(lineStyle)
 
                 PointMark(
-                    x: .value("Deň", point.0),
-                    y: .value("Hodnota", point.1)
+                    x: .value(String(localized: "Day"), point.0),
+                    y: .value(String(localized: "Value"), point.1)
                 )
                 .foregroundStyle(chartColor)
                 .symbolSize(variant == .primary ? 20 : 14)
@@ -443,7 +464,12 @@ struct MetricLineChart: View {
             }
             .frame(height: 84)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Trend za posledných \(points.count) platných dní")
+            .accessibilityLabel(
+                String.localizedStringWithFormat(
+                    String(localized: "Trend across the last %lld valid days"),
+                    points.count
+                )
+            )
         } else {
             MetricNeutralPanel(
                 symbol: "chart.xyaxis.line",

@@ -1,6 +1,7 @@
 import Foundation
 import HealthKit
 
+#if DEBUG
 /// Gate G0.2: checks whether this watch actually exposes raw RR intervals
 /// via HKHeartbeatSeriesQuery — the Health app export does not contain
 /// them (see docs/data-availability-report.md), so this has to be verified
@@ -138,3 +139,4 @@ private actor HeartbeatSeriesCounter {
 private enum DiagnosticsError: Error {
     case authorizationDenied
 }
+#endif

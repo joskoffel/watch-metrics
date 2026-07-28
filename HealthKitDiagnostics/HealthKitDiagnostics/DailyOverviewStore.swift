@@ -13,10 +13,18 @@ enum DataLoadState: Equatable {
     case failed(String)
 }
 
-enum NotificationAccess: String {
-    case unknown = "Neoverené"
-    case allowed = "Povolené"
-    case denied = "Zakázané"
+enum NotificationAccess {
+    case unknown
+    case allowed
+    case denied
+
+    var localizedText: String {
+        switch self {
+        case .unknown: String(localized: "Not checked")
+        case .allowed: String(localized: "Allowed")
+        case .denied: String(localized: "Denied")
+        }
+    }
 }
 
 @MainActor
@@ -47,7 +55,9 @@ final class DailyOverviewStore {
     private(set) var rhrState: DataLoadState = .idle
     private(set) var spo2State: DataLoadState = .idle
     private(set) var notificationAccess: NotificationAccess = .unknown
+    #if DEBUG
     private(set) var notificationTestMessage: String?
+    #endif
     private(set) var isLoading = false
     private(set) var rmssdValue: Double?
     private(set) var rmssdStatus: RMSSDStatus?
@@ -91,25 +101,36 @@ final class DailyOverviewStore {
     }
 
     var dataStatusText: String {
-        if isLoading { return "Načítavam HealthKit…" }
+        if isLoading { return String(localized: "Loading HealthKit…") }
         switch snapshot.availability {
-        case .complete: return "Dáta sú kompletné"
-        case .partial(let available, let total): return "\(available) z \(total) metrík dostupné"
-        case .empty: return "Pre túto noc nie sú dáta"
+        case .complete:
+            return String(localized: "Data is complete")
+        case .partial(let available, let total):
+            return String.localizedStringWithFormat(
+                String(localized: "%lld of %lld metrics available"),
+                available,
+                total
+            )
+        case .empty:
+            return String(localized: "No nightly data")
         }
     }
 
     var morningBriefText: String {
-        guard let sleep = snapshot.sleep else { return "Čaká na hlavný spánok" }
-        return briefStore.hasDelivered(onDay: sleep.end) ? "Dnešný brief bol doručený" : "Brief zatiaľ nebol doručený"
+        guard let sleep = snapshot.sleep else { return String(localized: "Waiting for main sleep") }
+        return briefStore.hasDelivered(onDay: sleep.end)
+            ? String(localized: "Today’s brief was delivered")
+            : String(localized: "Brief not delivered yet")
     }
 
     var healthKitAccessText: String {
-        guard HKHealthStore.isHealthDataAvailable() else { return "Na zariadení nedostupný" }
-        if [sleepState, hrvState, rhrState, spo2State].contains(.permissionDenied) {
-            return "Skontrolujte povolenia v aplikácii Zdravie"
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return String(localized: "Not available on this device")
         }
-        return "Prístup sa spravuje v aplikácii Zdravie"
+        if [sleepState, hrvState, rhrState, spo2State].contains(.permissionDenied) {
+            return String(localized: "Check permissions in the Health app")
+        }
+        return String(localized: "Access is managed in the Health app")
     }
 
     func load(referenceDate: Date? = nil) async {
@@ -215,6 +236,7 @@ final class DailyOverviewStore {
         }
     }
 
+    #if DEBUG
     func sendSafeTestNotification() async {
         notificationTestMessage = nil
         do {
@@ -225,19 +247,20 @@ final class DailyOverviewStore {
                     lines: [
                         BriefLine(
                             label: "Test",
-                            value: "notifikácia funguje",
+                            value: "notification works",
                             qualifier: nil,
                             isProvisional: false
                         )
                     ]
                 )
             )
-            notificationTestMessage = "Test bol odoslaný"
+            notificationTestMessage = "Test sent"
         } catch {
-            notificationTestMessage = "Test zlyhal: \(error.localizedDescription)"
+            notificationTestMessage = "Test failed: \(error.localizedDescription)"
         }
         await refreshNotificationAccess()
     }
+    #endif
 
     private func requestOverviewAuthorization() async throws {
         let readTypes: Set<HKObjectType> = [

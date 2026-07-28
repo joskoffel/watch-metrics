@@ -40,7 +40,7 @@ struct WatchMetricsComplicationView: View {
                 Label("Watch Metrics", systemImage: "waveform.path.ecg")
                     .font(.caption.weight(.semibold))
                     .widgetAccentable()
-                Text("Denný prehľad")
+                Text("Daily overview")
                     .font(.caption2)
             }
         case .accessoryCorner:
@@ -63,7 +63,7 @@ struct WatchMetricsComplication: Widget {
                 .containerBackground(.indigo.gradient, for: .widget)
         }
         .configurationDisplayName("Watch Metrics")
-        .description("Otvorí váš denný zdravotný prehľad.")
+        .description("Opens your daily health overview.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .accessoryCorner])
     }
 }

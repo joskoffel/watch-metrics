@@ -71,13 +71,7 @@ final class BriefRunner {
                 if requestsNotificationAuthorization {
                     try await notifier.requestAuthorization()
                 }
-                var content = BriefComposer.compose(from: summary)
-                if let weather = await WeatherBriefService.shared.currentSummary() {
-                    content = BriefContent(
-                        title: content.title,
-                        lines: content.lines + [BriefLine(label: "Počasie", value: weather.briefText, qualifier: nil, isProvisional: false)]
-                    )
-                }
+                let content = BriefComposer.compose(from: summary)
                 try await notifier.notify(content)
                 store.markDelivered(onDay: summary.sleep.end)
                 diagnostics.recordDeduped(false)

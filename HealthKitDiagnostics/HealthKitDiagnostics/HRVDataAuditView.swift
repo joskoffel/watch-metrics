@@ -1,4 +1,6 @@
 import SwiftUI
+
+#if DEBUG
 import WatchMetricsSupport
 
 struct HRVDataAuditView: View {
@@ -94,3 +96,4 @@ struct HRVDataAuditView: View {
         ].joined()
     }
 }
+#endif

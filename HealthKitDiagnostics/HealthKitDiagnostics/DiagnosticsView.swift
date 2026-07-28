@@ -1,5 +1,7 @@
 import SwiftUI
 
+#if DEBUG
+
 struct DiagnosticsView: View {
     @State private var diagnostics = HeartbeatSeriesDiagnostics()
 
@@ -14,3 +16,4 @@ struct DiagnosticsView: View {
         }
     }
 }
+#endif

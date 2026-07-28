@@ -3,6 +3,7 @@ import HealthKit
 import MetricsCore
 import WatchMetricsSupport
 
+#if DEBUG
 struct HRVDataAuditNight: Identifiable {
     let day: Date
     let sdnnSampleCount: Int
@@ -185,3 +186,4 @@ final class HRVDataAuditStore {
 private enum HRVDataAuditError: Error {
     case authorizationDenied
 }
+#endif

@@ -45,14 +45,14 @@ struct TodayView: View {
                             SleepDetailView(store: store)
                         } label: {
                             DashboardMetricTile(
-                                title: "SPÁNOK",
-                                accessibilityTitle: "Spánok",
+                                title: String(localized: "SLEEP"),
+                                accessibilityTitle: String(localized: "Sleep"),
                                 symbol: "bed.double.fill",
                                 value: store.snapshot.sleep.map {
                                     compactSleepValue($0.asleepDuration)
                                 },
                                 unit: store.snapshot.sleep == nil ? nil : "h",
-                                status: "hlavný spánok",
+                                status: String(localized: "main sleep"),
                                 statusColor: nil,
                                 tint: AppTheme.dashboardViolet,
                                 state: store.sleepState
@@ -65,7 +65,7 @@ struct TodayView: View {
                         } label: {
                             DashboardMetricTile(
                                 title: "HRV · SDNN",
-                                accessibilityTitle: "Nočná HRV, SDNN",
+                                accessibilityTitle: String(localized: "Nightly HRV, SDNN"),
                                 symbol: "waveform.path.ecg",
                                 value: store.snapshot.hrv.map {
                                     "\(Int($0.value.rounded()))"
@@ -73,7 +73,7 @@ struct TodayView: View {
                                 unit: store.snapshot.hrv == nil ? nil : "ms",
                                 status: store.snapshot.hrv.map {
                                     hrvLevel($0.level)
-                                } ?? "osobná baseline",
+                                } ?? String(localized: "personal baseline"),
                                 statusColor: store.snapshot.hrv.map {
                                     hrvStatusColor($0.level)
                                 },
@@ -87,8 +87,8 @@ struct TodayView: View {
                             RHRDetailView(store: store)
                         } label: {
                             DashboardMetricTile(
-                                title: "POKOJ. PULZ",
-                                accessibilityTitle: "Pokojový pulz",
+                                title: String(localized: "RESTING HR"),
+                                accessibilityTitle: String(localized: "Resting heart rate"),
                                 symbol: "heart.fill",
                                 value: store.snapshot.rhr.map {
                                     "\(Int($0.value.rounded()))"
@@ -96,7 +96,7 @@ struct TodayView: View {
                                 unit: store.snapshot.rhr == nil ? nil : "bpm",
                                 status: store.snapshot.rhr.map {
                                     rhrLevel($0.level)
-                                } ?? "osobná baseline",
+                                } ?? String(localized: "personal baseline"),
                                 statusColor: store.snapshot.rhr.map {
                                     rhrStatusColor($0.level)
                                 },
@@ -111,7 +111,7 @@ struct TodayView: View {
                         } label: {
                             DashboardMetricTile(
                                 title: "SPO₂",
-                                accessibilityTitle: "Okysličenie krvi",
+                                accessibilityTitle: String(localized: "Blood oxygen"),
                                 symbol: "lungs.fill",
                                 value: store.snapshot.spo2.map {
                                     "\(Int($0.value.rounded()))"
@@ -119,7 +119,7 @@ struct TodayView: View {
                                 unit: store.snapshot.spo2 == nil ? nil : "%",
                                 status: store.snapshot.spo2.map {
                                     spo2Level($0.level)
-                                } ?? "počas spánku",
+                                } ?? String(localized: "during sleep"),
                                 statusColor: store.snapshot.spo2.map {
                                     spo2StatusColor($0.level)
                                 },
@@ -138,7 +138,7 @@ struct TodayView: View {
                                 HistoryView(store: store)
                             } label: {
                                 DashboardSecondaryNavigationLabel(
-                                    title: "História",
+                                    title: String(localized: "History"),
                                     symbol: "calendar"
                                 )
                             }
@@ -148,7 +148,7 @@ struct TodayView: View {
                                 SettingsView(store: store)
                             } label: {
                                 DashboardSecondaryNavigationLabel(
-                                    title: "Nastavenia",
+                                    title: String(localized: "Settings"),
                                     symbol: "gearshape"
                                 )
                             }
@@ -161,7 +161,7 @@ struct TodayView: View {
             }
         }
         .containerBackground(AppTheme.dashboardBackground, for: .navigation)
-        .navigationTitle(showsPrimaryNavigation ? "Dnes" : dayTitle(store.referenceDate))
+        .navigationTitle(showsPrimaryNavigation ? String(localized: "Today") : dayTitle(store.referenceDate))
         .task(id: store.referenceDate) {
             await store.load()
         }
@@ -195,7 +195,7 @@ struct HistoryView: View {
                 }
             }
         }
-        .navigationTitle("14 nocí")
+        .navigationTitle(String(localized: "14 nights"))
     }
 
     private func historyValue(_ label: String, _ value: String?, _ color: Color?) -> some View {
@@ -226,12 +226,12 @@ struct SleepDetailView: View {
             theme: .sleep,
             value: store.snapshot.sleep.map { compactSleepValue($0.asleepDuration) },
             unit: store.snapshot.sleep == nil ? nil : "h",
-            source: "Apple Health · hlavný spánok",
+            source: String(localized: "Apple Health · main sleep"),
             status: store.snapshot.sleep == nil
                 ? nil
                 : MetricStatusPresentation(
-                    text: "Hlavný spánok",
-                    context: "čas spánku",
+                    text: String(localized: "Main sleep"),
+                    context: String(localized: "time asleep"),
                     color: AppTheme.statusNormal
                 ),
             state: store.sleepState,
@@ -239,10 +239,10 @@ struct SleepDetailView: View {
         ) {
             MetricDetailPanel(
                 theme: .sleep,
-                title: "Čo hodnota znamená",
-                eyebrow: "Kontext"
+                title: String(localized: "What this value means"),
+                eyebrow: String(localized: "Context")
             ) {
-                Text("Čas skutočne strávený v spánkových fázach. Nezahŕňa bdenie ani čas iba v posteli.")
+                Text("Time actually spent in sleep stages. It excludes awake time and time spent only in bed.")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.68))
                     .fixedSize(horizontal: false, vertical: true)
@@ -250,12 +250,12 @@ struct SleepDetailView: View {
 
             MetricDetailPanel(
                 theme: .sleep,
-                title: "Historický trend",
-                eyebrow: "7 nocí"
+                title: String(localized: "Historical trend"),
+                eyebrow: String(localized: "7 nights")
             ) {
                 MetricNeutralPanel(
                     symbol: "moon.stars",
-                    text: "Trend bude dostupný po zapojení historickej sleep pipeline."
+                    text: String(localized: "A trend will appear when historical sleep data is available.")
                 )
             }
         }
@@ -270,7 +270,7 @@ struct HRVDetailView: View {
             theme: .hrv,
             value: store.snapshot.hrv.map { "\(Int($0.value.rounded()))" },
             unit: store.snapshot.hrv == nil ? nil : "ms SDNN",
-            source: "Apple Health · nočný SDNN",
+            source: String(localized: "Apple Health · nightly SDNN"),
             status: store.snapshot.hrv.map(hrvStatusPresentation),
             state: store.hrvState,
             unavailableText: hrvUnavailableText(store.hrvState)
@@ -278,7 +278,7 @@ struct HRVDetailView: View {
             MetricDetailPanel(
                 theme: .hrv,
                 title: hrvAgreementText(store.hrvAgreement),
-                eyebrow: "Zhoda signálov"
+                eyebrow: String(localized: "Signal agreement")
             ) {
                 MetricStatusCapsule(status: hrvAgreementPresentation(store.hrvAgreement))
             }
@@ -286,7 +286,7 @@ struct HRVDetailView: View {
             MetricDetailPanel(
                 theme: .hrv,
                 title: "SDNN",
-                eyebrow: "Autoritatívny signál · Apple Health"
+                eyebrow: String(localized: "Primary signal · Apple Health")
             ) {
                 MetricValueRow(
                     value: store.snapshot.hrv.map { "\(Int($0.value.rounded()))" },
@@ -294,7 +294,7 @@ struct HRVDetailView: View {
                     status: store.snapshot.hrv.map(hrvStatusPresentation),
                     unavailableText: hrvUnavailableText(store.hrvState)
                 )
-                Text("Nočný medián SDNN porovnávame s vašou osobnou 7/28-dňovou baseline.")
+                Text("Your nightly median SDNN compared with your personal 7/28-day baseline.")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.64))
                     .fixedSize(horizontal: false, vertical: true)
@@ -308,7 +308,7 @@ struct HRVDetailView: View {
             MetricDetailPanel(
                 theme: .hrv,
                 title: "RMSSD",
-                eyebrow: "Doplnkový signál · RR intervaly"
+                eyebrow: String(localized: "Supporting signal · RR intervals")
             ) {
                 MetricValueRow(
                     value: store.rmssdValue.map { "\(Int($0.rounded()))" },
@@ -316,7 +316,7 @@ struct HRVDetailView: View {
                     status: store.rmssdStatus.map(hrvStatusPresentation),
                     unavailableText: rmssdUnavailableText(store.rmssdState)
                 )
-                Text("RMSSD počítame zo samostatných heartbeat sérií počas hlavného spánku; hranice sérií nikdy nespájame.")
+                Text("RMSSD is calculated from separate heartbeat series during main sleep; series boundaries are never joined.")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.64))
                     .fixedSize(horizontal: false, vertical: true)
@@ -324,7 +324,7 @@ struct HRVDetailView: View {
                     points: store.rmssdHistory.map { ($0.date, $0.value) },
                     theme: .hrv,
                     variant: .secondary,
-                    unavailableText: "Nedostatok RMSSD dát"
+                    unavailableText: String(localized: "Not enough RMSSD data")
                 )
             }
         }
@@ -339,17 +339,17 @@ struct RHRDetailView: View {
             theme: .restingHeartRate,
             value: store.snapshot.rhr.map { "\(Int($0.value.rounded()))" },
             unit: store.snapshot.rhr == nil ? nil : "bpm",
-            source: "Apple Health · denná hodnota",
+            source: String(localized: "Apple Health · daily value"),
             status: store.snapshot.rhr.map(rhrStatusPresentation),
             state: store.rhrState,
             unavailableText: baselineUnavailableText(store.rhrState)
         ) {
             MetricDetailPanel(
                 theme: .restingHeartRate,
-                title: "Osobný kontext",
-                eyebrow: "7/28-dňová baseline"
+                title: String(localized: "Personal context"),
+                eyebrow: String(localized: "7/28-day baseline")
             ) {
-                Text("Pokojový pulz je denná hodnota zo Zdravia porovnaná s vašou osobnou baseline.")
+                Text("Resting heart rate is a daily Apple Health value compared with your personal baseline.")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.68))
                     .fixedSize(horizontal: false, vertical: true)
@@ -357,8 +357,8 @@ struct RHRDetailView: View {
 
             MetricDetailPanel(
                 theme: .restingHeartRate,
-                title: "Posledné platné dni",
-                eyebrow: "Trend"
+                title: String(localized: "Recent valid days"),
+                eyebrow: String(localized: "Trend")
             ) {
                 MetricLineChart(
                     points: store.rhrHistory.map { ($0.date, $0.value.value) },
@@ -377,17 +377,17 @@ struct SpO2DetailView: View {
             theme: .oxygenSaturation,
             value: store.snapshot.spo2.map { "\(Int($0.value.rounded()))" },
             unit: store.snapshot.spo2 == nil ? nil : "%",
-            source: "Apple Health · počas hlavného spánku",
+            source: String(localized: "Apple Health · during main sleep"),
             status: store.snapshot.spo2.map(spo2StatusPresentation),
             state: store.spo2State,
             unavailableText: detailUnavailableText(store.spo2State)
         ) {
             MetricDetailPanel(
                 theme: .oxygenSaturation,
-                title: "Nočný kontext",
-                eyebrow: "Okysličenie krvi"
+                title: String(localized: "Nightly context"),
+                eyebrow: String(localized: "Blood oxygen")
             ) {
-                Text("Odhad nasýtenia krvi kyslíkom zo zápästia. Nízky stav ostáva viditeľný bez ohľadu na množstvo histórie.")
+                Text("An estimate of blood oxygen saturation from your wrist. Low readings remain visible regardless of available history.")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.68))
                     .fixedSize(horizontal: false, vertical: true)
@@ -395,8 +395,8 @@ struct SpO2DetailView: View {
 
             MetricDetailPanel(
                 theme: .oxygenSaturation,
-                title: "Posledné platné noci",
-                eyebrow: "Trend"
+                title: String(localized: "Recent valid nights"),
+                eyebrow: String(localized: "Trend")
             ) {
                 MetricLineChart(
                     points: store.spo2History.map { ($0.date, $0.value.value) },
@@ -406,7 +406,7 @@ struct SpO2DetailView: View {
 
             MetricQuietFooter(
                 symbol: "info.circle",
-                text: "Watch Metrics nie je zdravotnícka pomôcka."
+                text: String(localized: "Watch Metrics is not a medical device.")
             )
         }
     }
@@ -414,56 +414,46 @@ struct SpO2DetailView: View {
 
 struct SettingsView: View {
     let store: DailyOverviewStore
-    @State private var weatherStatus = WeatherBriefService.shared.lastStatus
-    @State private var weatherSymbolName = WeatherBriefService.shared.lastSymbolName
 
     var body: some View {
         List {
-            Section("Ranný brief") {
-                LabeledContent("Stav", value: store.morningBriefText)
-                LabeledContent("Notifikácie", value: store.notificationAccess.rawValue)
+            Section("Morning brief") {
+                LabeledContent("Status", value: store.morningBriefText)
+                LabeledContent("Notifications", value: store.notificationAccess.localizedText)
+                #if DEBUG
                 Button("Odoslať bezpečný test") {
                     Task { await store.sendSafeTestNotification() }
                 }
                 if let message = store.notificationTestMessage {
                     Text(message).font(.caption2).foregroundStyle(.secondary)
                 }
+                #endif
             }
-            Section("Zdravie") {
+            Section("Health") {
                 Text(store.healthKitAccessText)
                     .font(.caption)
             }
-            Section("Počasie") {
-                LabeledContent("Poloha", value: WeatherLocationProvider.shared.managerAuthorizationText)
-                LabeledContent("Cache polohy", value: WeatherLocationProvider.shared.cachedLocationAgeText())
-                Label(weatherStatus, systemImage: weatherSymbolName)
-                    .font(.caption2)
-                Text("Weather by Apple")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Section("O aplikácii") {
+            Section("About") {
                 LabeledContent("Watch Metrics", value: "1.0")
-                Text("Denný prehľad údajov zo Zdravia. Nie je zdravotníckou pomôckou.")
+                Text("A daily overview of Apple Health data. Not a medical device.")
                     .font(.caption2)
             }
-            NavigationLink {
-                DeveloperMenuView()
-            } label: {
-                Label("Developer", systemImage: "hammer.fill")
-            }
+            #if DEBUG
+                NavigationLink {
+                    DeveloperMenuView()
+                } label: {
+                    Label("Developer", systemImage: "hammer.fill")
+                }
+            #endif
         }
-        .navigationTitle("Nastavenia")
+        .navigationTitle("Settings")
         .task {
-            WeatherLocationProvider.shared.requestForegroundAuthorizationIfNeeded()
             await store.refreshNotificationAccess()
-            _ = await WeatherBriefService.shared.currentSummary()
-            weatherStatus = WeatherBriefService.shared.lastStatus
-            weatherSymbolName = WeatherBriefService.shared.lastSymbolName
         }
     }
 }
 
+#if DEBUG
 struct DeveloperMenuView: View {
     var body: some View {
         List {
@@ -474,6 +464,7 @@ struct DeveloperMenuView: View {
         .navigationTitle("Developer")
     }
 }
+#endif
 
 extension View {
     func cardStyle() -> some View {
@@ -490,42 +481,42 @@ extension View {
 
 func confidenceText(_ confidence: ConfidenceLevel) -> String {
     switch confidence {
-    case .low: "nízka"
-    case .medium: "stredná"
-    case .high: "vysoká"
+    case .low: String(localized: "low")
+    case .medium: String(localized: "medium")
+    case .high: String(localized: "high")
     }
 }
 
 func hrvLevel(_ level: HRVStatusLevel) -> String {
     switch level {
-    case .low: "nižšie než zvyčajne"
-    case .normal: "v osobnom pásme"
-    case .high: "vyššie než zvyčajne"
+    case .low: String(localized: "lower than usual")
+    case .normal: String(localized: "within personal range")
+    case .high: String(localized: "higher than usual")
     }
 }
 
 func hrvAgreementText(_ insight: HRVAgreementInsight) -> String {
     switch insight {
-    case .bothLower: "Oba signály nižšie než osobná baseline"
-    case .bothTypicalOrHigher: "Oba signály v osobnom pásme alebo vyššie"
-    case .mixed: "Zmiešané HRV signály"
-    case .insufficientRMSSD: "Nedostatok RMSSD dát"
+    case .bothLower: String(localized: "Both signals are below personal baseline")
+    case .bothTypicalOrHigher: String(localized: "Both signals are within personal range or higher")
+    case .mixed: String(localized: "Mixed HRV signals")
+    case .insufficientRMSSD: String(localized: "Not enough RMSSD data")
     }
 }
 
 func rhrLevel(_ level: RHRStatusLevel) -> String {
     switch level {
-    case .suppressed: "nižší než zvyčajne"
-    case .normal: "v osobnom pásme"
-    case .elevated: "zvýšený"
+    case .suppressed: String(localized: "lower than usual")
+    case .normal: String(localized: "within personal range")
+    case .elevated: String(localized: "elevated")
     }
 }
 
 func spo2Level(_ level: SpO2StatusLevel) -> String {
     switch level {
-    case .normal: "V bežnom rozsahu"
-    case .low: "Nízka hodnota"
-    case .critical: "Kriticky nízka hodnota"
+    case .normal: String(localized: "Within normal range")
+    case .low: String(localized: "Low reading")
+    case .critical: String(localized: "Critically low reading")
     }
 }
 
@@ -573,7 +564,7 @@ func spo2StatusColor(_ level: SpO2StatusLevel) -> Color {
 func hrvStatusPresentation(_ status: HRVStatus) -> MetricStatusPresentation {
     MetricStatusPresentation(
         text: hrvLevel(status.level),
-        context: "\(confidenceText(status.confidence)) istota",
+        context: localizedConfidence(status.confidence),
         color: hrvStatusColor(status.level)
     )
 }
@@ -581,7 +572,7 @@ func hrvStatusPresentation(_ status: HRVStatus) -> MetricStatusPresentation {
 func hrvStatusPresentation(_ status: RMSSDStatus) -> MetricStatusPresentation {
     MetricStatusPresentation(
         text: hrvLevel(status.level),
-        context: "\(confidenceText(status.confidence)) istota",
+        context: localizedConfidence(status.confidence),
         color: hrvStatusColor(status.level)
     )
 }
@@ -589,7 +580,7 @@ func hrvStatusPresentation(_ status: RMSSDStatus) -> MetricStatusPresentation {
 func rhrStatusPresentation(_ status: RHRStatus) -> MetricStatusPresentation {
     MetricStatusPresentation(
         text: rhrLevel(status.level),
-        context: "\(confidenceText(status.confidence)) istota",
+        context: localizedConfidence(status.confidence),
         color: rhrStatusColor(status.level)
     )
 }
@@ -597,7 +588,7 @@ func rhrStatusPresentation(_ status: RHRStatus) -> MetricStatusPresentation {
 func spo2StatusPresentation(_ status: SpO2Status) -> MetricStatusPresentation {
     MetricStatusPresentation(
         text: spo2Level(status.level),
-        context: "\(confidenceText(status.confidence)) kontext",
+        context: localizedContext(status.confidence),
         color: spo2StatusColor(status.level)
     )
 }
@@ -628,13 +619,13 @@ func hrvAgreementPresentation(_ insight: HRVAgreementInsight) -> MetricStatusPre
 }
 
 func detailUnavailableText(_ state: DataLoadState) -> String {
-    state == .loading ? "Načítavam…" : stateMessage(state)
+    state == .loading ? String(localized: "Loading…") : stateMessage(state)
 }
 
 func baselineUnavailableText(_ state: DataLoadState) -> String {
     switch state {
     case .loaded, .empty:
-        "Nedostatok dát pre osobnú baseline"
+        String(localized: "Not enough data for a personal baseline")
     default:
         detailUnavailableText(state)
     }
@@ -647,23 +638,37 @@ func hrvUnavailableText(_ state: DataLoadState) -> String {
 func rmssdUnavailableText(_ state: DataLoadState) -> String {
     switch state {
     case .loading:
-        "Načítavam RMSSD…"
+        String(localized: "Loading RMSSD…")
     case .permissionDenied:
         stateMessage(state)
     default:
-        "Nedostatok RMSSD dát"
+        String(localized: "Not enough RMSSD data")
     }
 }
 
 func stateMessage(_ state: DataLoadState) -> String {
     switch state {
-    case .idle: "Dáta ešte neboli načítané"
-    case .loading: "Načítavam…"
-    case .loaded: "Dáta sú dostupné"
-    case .empty: "Pre tento deň nie sú dáta"
-    case .permissionDenied: "Skontrolujte prístup v aplikácii Zdravie"
-    case .failed(let message): "Načítanie zlyhalo: \(message)"
+    case .idle: String(localized: "Data has not been loaded yet")
+    case .loading: String(localized: "Loading…")
+    case .loaded: String(localized: "Data available")
+    case .empty: String(localized: "No data for this day")
+    case .permissionDenied: String(localized: "Check access in the Health app")
+    case .failed: String(localized: "Unable to load data")
     }
+}
+
+private func localizedConfidence(_ confidence: ConfidenceLevel) -> String {
+    String.localizedStringWithFormat(
+        String(localized: "%@ confidence"),
+        confidenceText(confidence)
+    )
+}
+
+private func localizedContext(_ confidence: ConfidenceLevel) -> String {
+    String.localizedStringWithFormat(
+        String(localized: "%@ context"),
+        confidenceText(confidence)
+    )
 }
 
 func dayTitle(_ date: Date) -> String {

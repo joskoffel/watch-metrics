@@ -13,7 +13,6 @@ struct BriefDiagnosticSnapshot {
     let lastObserverTriggerDate: Date?
     let lastObserverOutcome: String?
     let sleepBackgroundDeliveryStatus: String?
-    let weatherStatus: String?
     let resolvedMainSleepEnd: Date?
     let intendedDeliveryDate: Date?
     let fallbackFireDate: Date?
@@ -34,7 +33,6 @@ struct BriefDiagnosticsStore {
         static let lastObserverTriggerDate = "BriefDiagnostics.lastObserverTriggerDate"
         static let lastObserverOutcome = "BriefDiagnostics.lastObserverOutcome"
         static let sleepBackgroundDeliveryStatus = "BriefDiagnostics.sleepBackgroundDeliveryStatus"
-        static let weatherStatus = "BriefDiagnostics.weatherStatus"
         static let resolvedMainSleepEnd = "BriefDiagnostics.resolvedMainSleepEnd"
         static let intendedDeliveryDate = "BriefDiagnostics.intendedDeliveryDate"
         static let fallbackFireDate = "BriefDiagnostics.fallbackFireDate"
@@ -85,10 +83,6 @@ struct BriefDiagnosticsStore {
         }
     }
 
-    func recordWeatherStatus(_ status: String) {
-        defaults.set(status, forKey: Key.weatherStatus)
-    }
-
     func recordResolvedSleep(end: Date?, intendedDelivery: Date?) {
         if let end { defaults.set(end, forKey: Key.resolvedMainSleepEnd) } else { defaults.removeObject(forKey: Key.resolvedMainSleepEnd) }
         if let intendedDelivery { defaults.set(intendedDelivery, forKey: Key.intendedDeliveryDate) } else { defaults.removeObject(forKey: Key.intendedDeliveryDate) }
@@ -118,7 +112,6 @@ struct BriefDiagnosticsStore {
             lastObserverTriggerDate: defaults.object(forKey: Key.lastObserverTriggerDate) as? Date,
             lastObserverOutcome: defaults.string(forKey: Key.lastObserverOutcome),
             sleepBackgroundDeliveryStatus: defaults.string(forKey: Key.sleepBackgroundDeliveryStatus),
-            weatherStatus: defaults.string(forKey: Key.weatherStatus),
             resolvedMainSleepEnd: defaults.object(forKey: Key.resolvedMainSleepEnd) as? Date,
             intendedDeliveryDate: defaults.object(forKey: Key.intendedDeliveryDate) as? Date,
             fallbackFireDate: defaults.object(forKey: Key.fallbackFireDate) as? Date,

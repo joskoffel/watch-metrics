@@ -7,9 +7,10 @@ Posledná aktualizácia: 2026-07-28
 Watch Metrics je watch-only produktová aplikácia pre osobný denný prehľad
 odvodených metrík zo HealthKitu. Aktivity netrackuje — tie zaznamenáva natívna
 Workout app a Watch Metrics číta iba existujúce údaje. Aktuálny produktový shell
-obsahuje Today, detaily metrík, 14-dňovú históriu, Settings a oddelené Developer
-menu. Produktové smerovanie je **morning-first HRV/recovery**; cieľom nie je
-kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
+obsahuje Today, detaily metrík, 14-dňovú históriu a Settings. Debug build navyše
+obsahuje oddelené Developer menu. Produktové smerovanie je **morning-first
+HRV/recovery**; cieľom nie je kopírovať Apple Vitals. Aplikácia nie je
+zdravotnícka pomôcka.
 
 ## Kľúčové rozhodnutia (nemeň bez dobrého dôvodu)
 
@@ -85,8 +86,13 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
   hero s jedným pomalým dekoratívnym pulzom a štyri metriky sú v kompaktnom
   2×2 gride. Reduce Motion pulz vypne a historické dni používajú statický hero.
   Ranný brief je kompaktný footer; History otvára rovnaký reference-date-aware
-  dashboard. Settings obsahuje notifikácie, bezpečný test, HealthKit informáciu
-  a About.
+  dashboard. Verejné Settings obsahuje stav notifikácií, HealthKit informáciu
+  a About; bezpečný test a Developer nástroje sú dostupné iba v Debug builde.
+- Release 1.0 má angličtinu ako development language a úplnú slovenskú
+  lokalizáciu cez String Catalogs vrátane notifikácií, komplikácie a
+  HealthKit usage description. App a komplikácia majú synchronizované verzie
+  1.0 (build 2), privacy manifesty a reprodukovateľnú archive konfiguráciu
+  z `project.yml`.
 - Today aj detaily používajú stabilné identity farby nezávislé od levelu:
   sleep violet, HRV cyan, RHR magenta a SpO₂ blue. Detail má spoločný hero,
   tematické obsahové/trend panely a samostatnú textovú status kapsulu so
@@ -232,7 +238,12 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
     osobnú ±10 % HRV konvenciu a vlastnú 7/28-dňovú baseline; agreement insight
     iba vysvetľuje zhodu smerov. `DailyOverviewStore` načíta najviac 28 platných
     RMSSD nocí cez presné intervaly hlavného spánku. `BriefRunner`,
-    `RecoverySignal`, weather a notifikačné časovanie zostali bez RMSSD.
+    `RecoverySignal` a notifikačné časovanie zostali bez RMSSD.
+16. ~~App Store release hardening 1.0~~ ✅ (2026-07-28) — doplnené EN/SK
+    katalógy a lokalizované notifikácie, Debug-only interné nástroje, privacy
+    manifesty, build 2 a `SKIP_INSTALL = NO` pre skutočný watch-only archive
+    payload. Návrhy metadát, privacy/review odpovedí a screenshotov sú v
+    `docs/app-store/`.
 
 ## Nástroje a workflow
 

@@ -1,0 +1,1192 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "—" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        }
+      }
+    },
+    "(provisional)" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(orientačne)"
+          }
+        }
+      }
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ confidence" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ istota"
+          }
+        }
+      }
+    },
+    "%@ context" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kontext"
+          }
+        }
+      }
+    },
+    "%@, %@, %@%@. Source: %@" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@, %@%@. Zdroj: %@"
+          }
+        }
+      }
+    },
+    "%@, %@. Source: %@" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@. Zdroj: %@"
+          }
+        }
+      }
+    },
+    "%@, loading" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, načítavam"
+          }
+        }
+      }
+    },
+    "%@, loading. Source: %@" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, načítavam. Zdroj: %@"
+          }
+        }
+      }
+    },
+    "%lld of %lld metrics available" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld z %lld metrík dostupných"
+          }
+        }
+      }
+    },
+    "7 nights" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 nocí"
+          }
+        }
+      }
+    },
+    "7/28-day baseline" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7/28-dňová baseline"
+          }
+        }
+      }
+    },
+    "14 nights" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "14 nocí"
+          }
+        }
+      }
+    },
+    "A daily overview of Apple Health data. Not a medical device." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denný prehľad údajov zo Zdravia. Nie je zdravotníckou pomôckou."
+          }
+        }
+      }
+    },
+    "A trend will appear when historical sleep data is available." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trend sa zobrazí, keď budú dostupné historické údaje o spánku."
+          }
+        }
+      }
+    },
+    "About" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O aplikácii"
+          }
+        }
+      }
+    },
+    "Access is managed in the Health app" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prístup sa spravuje v aplikácii Zdravie"
+          }
+        }
+      }
+    },
+    "Allowed" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Povolené"
+          }
+        }
+      }
+    },
+    "An estimate of blood oxygen saturation from your wrist. Low readings remain visible regardless of available history." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odhad nasýtenia krvi kyslíkom zo zápästia. Nízke hodnoty zostávajú viditeľné bez ohľadu na množstvo histórie."
+          }
+        }
+      }
+    },
+    "Apple Health · daily value" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health · denná hodnota"
+          }
+        }
+      }
+    },
+    "Apple Health · during main sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health · počas hlavného spánku"
+          }
+        }
+      }
+    },
+    "Apple Health · main sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health · hlavný spánok"
+          }
+        }
+      }
+    },
+    "Apple Health · nightly SDNN" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health · nočný SDNN"
+          }
+        }
+      }
+    },
+    "Personal HRV and resting heart rate history" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osobná história HRV a pokojového pulzu"
+          }
+        }
+      }
+    },
+    "Blood oxygen" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okysličenie krvi"
+          }
+        }
+      }
+    },
+    "Both signals are below personal baseline" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oba signály sú nižšie než osobná baseline"
+          }
+        }
+      }
+    },
+    "Both signals are within personal range or higher" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oba signály sú v osobnom pásme alebo vyššie"
+          }
+        }
+      }
+    },
+    "Brief not delivered yet" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brief zatiaľ nebol doručený"
+          }
+        }
+      }
+    },
+    "Check access in the Health app" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skontrolujte prístup v aplikácii Zdravie"
+          }
+        }
+      }
+    },
+    "Check Health" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skontrolujte Zdravie"
+          }
+        }
+      }
+    },
+    "Check permissions in the Health app" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skontrolujte povolenia v aplikácii Zdravie"
+          }
+        }
+      }
+    },
+    "Collecting data" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zbieram dáta"
+          }
+        }
+      }
+    },
+    "Context" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontext"
+          }
+        }
+      }
+    },
+    "critically low" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kriticky nízke"
+          }
+        }
+      }
+    },
+    "Critically low reading" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kriticky nízka hodnota"
+          }
+        }
+      }
+    },
+    "Data available" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dáta dostupné"
+          }
+        }
+      }
+    },
+    "Data has not been loaded yet" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dáta ešte neboli načítané"
+          }
+        }
+      }
+    },
+    "Data is complete" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dáta sú kompletné"
+          }
+        }
+      }
+    },
+    "Day" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deň"
+          }
+        }
+      }
+    },
+    "Denied" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakázané"
+          }
+        }
+      }
+    },
+    "during sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "počas spánku"
+          }
+        }
+      }
+    },
+    "elevated" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zvýšený"
+          }
+        }
+      }
+    },
+    "favorable" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "priaznivá"
+          }
+        }
+      }
+    },
+    "Favorable" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priaznivá"
+          }
+        }
+      }
+    },
+    "Good morning" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dobré ráno"
+          }
+        }
+      }
+    },
+    "Health" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdravie"
+          }
+        }
+      }
+    },
+    "high" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vysoká"
+          }
+        }
+      }
+    },
+    "higher" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zvýšené"
+          }
+        }
+      }
+    },
+    "higher than usual" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vyššie než zvyčajne"
+          }
+        }
+      }
+    },
+    "Historical trend" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historický trend"
+          }
+        }
+      }
+    },
+    "History" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "História"
+          }
+        }
+      }
+    },
+    "Loading" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Načítavam"
+          }
+        }
+      }
+    },
+    "Loading failed" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Načítanie zlyhalo"
+          }
+        }
+      }
+    },
+    "Loading HealthKit…" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Načítavam HealthKit…"
+          }
+        }
+      }
+    },
+    "Loading RMSSD…" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Načítavam RMSSD…"
+          }
+        }
+      }
+    },
+    "Loading…" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Načítavam…"
+          }
+        }
+      }
+    },
+    "low" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nízka"
+          }
+        }
+      }
+    },
+    "Low reading" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nízka hodnota"
+          }
+        }
+      }
+    },
+    "lower" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "znížené"
+          }
+        }
+      }
+    },
+    "lower than usual" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nižšie než zvyčajne"
+          }
+        }
+      }
+    },
+    "Lower than usual" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nižšia než obvykle"
+          }
+        }
+      }
+    },
+    "main sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hlavný spánok"
+          }
+        }
+      }
+    },
+    "Main sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hlavný spánok"
+          }
+        }
+      }
+    },
+    "medium" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stredná"
+          }
+        }
+      }
+    },
+    "Mixed HRV signals" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmiešané HRV signály"
+          }
+        }
+      }
+    },
+    "mixed signal" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zmiešaný signál"
+          }
+        }
+      }
+    },
+    "Mixed signal" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmiešaný signál"
+          }
+        }
+      }
+    },
+    "Morning brief" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ranný brief"
+          }
+        }
+      }
+    },
+    "Morning brief, %@" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ranný brief, %@"
+          }
+        }
+      }
+    },
+    "Nightly context" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nočný kontext"
+          }
+        }
+      }
+    },
+    "Nightly HRV" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nočná HRV"
+          }
+        }
+      }
+    },
+    "Nightly HRV, SDNN" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nočná HRV, SDNN"
+          }
+        }
+      }
+    },
+    "No data" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bez dát"
+          }
+        }
+      }
+    },
+    "No data for this day" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pre tento deň nie sú dáta"
+          }
+        }
+      }
+    },
+    "No nightly data" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bez dát pre túto noc"
+          }
+        }
+      }
+    },
+    "Not available on this device" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tomto zariadení nie je dostupné"
+          }
+        }
+      }
+    },
+    "Not checked" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neoverené"
+          }
+        }
+      }
+    },
+    "Not enough data for a personal baseline" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nedostatok dát pre osobnú baseline"
+          }
+        }
+      }
+    },
+    "Not enough RMSSD data" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nedostatok RMSSD dát"
+          }
+        }
+      }
+    },
+    "Notifications" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifikácie"
+          }
+        }
+      }
+    },
+    "Notifications are not allowed" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifikácie nie sú povolené"
+          }
+        }
+      }
+    },
+    "personal baseline" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "osobná baseline"
+          }
+        }
+      }
+    },
+    "Personal context" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osobný kontext"
+          }
+        }
+      }
+    },
+    "Primary signal · Apple Health" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoritatívny signál · Apple Health"
+          }
+        }
+      }
+    },
+    "Recent valid days" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posledné platné dni"
+          }
+        }
+      }
+    },
+    "Recent valid nights" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posledné platné noci"
+          }
+        }
+      }
+    },
+    "Recovery" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerácia"
+          }
+        }
+      }
+    },
+    "RECOVERY" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "REGENERÁCIA"
+          }
+        }
+      }
+    },
+    "Recovery, %@. Based on your personal HRV and resting heart rate history." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerácia, %@. Podľa osobnej histórie HRV a pokojového pulzu."
+          }
+        }
+      }
+    },
+    "Resting heart rate" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokojový pulz"
+          }
+        }
+      }
+    },
+    "Resting heart rate is a daily Apple Health value compared with your personal baseline." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokojový pulz je denná hodnota zo Zdravia porovnaná s vašou osobnou baseline."
+          }
+        }
+      }
+    },
+    "RESTING HR" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "POKOJ. PULZ"
+          }
+        }
+      }
+    },
+    "RMSSD is calculated from separate heartbeat series during main sleep; series boundaries are never joined." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RMSSD počítame zo samostatných heartbeat sérií počas hlavného spánku; hranice sérií nikdy nespájame."
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nastavenia"
+          }
+        }
+      }
+    },
+    "Signal agreement" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zhoda signálov"
+          }
+        }
+      }
+    },
+    "Sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spánok"
+          }
+        }
+      }
+    },
+    "SLEEP" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPÁNOK"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stav"
+          }
+        }
+      }
+    },
+    "Supporting signal · RR intervals" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doplnkový signál · RR intervaly"
+          }
+        }
+      }
+    },
+    "Time actually spent in sleep stages. It excludes awake time and time spent only in bed." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Čas skutočne strávený v spánkových fázach. Nezahŕňa bdenie ani čas iba v posteli."
+          }
+        }
+      }
+    },
+    "time asleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "čas spánku"
+          }
+        }
+      }
+    },
+    "Today" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dnes"
+          }
+        }
+      }
+    },
+    "Today’s brief was delivered" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dnešný brief bol doručený"
+          }
+        }
+      }
+    },
+    "Trend" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trend"
+          }
+        }
+      }
+    },
+    "Trend across the last %lld valid days" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trend za posledných %lld platných dní"
+          }
+        }
+      }
+    },
+    "Trend is not available yet." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trend zatiaľ nie je dostupný."
+          }
+        }
+      }
+    },
+    "Unable to load data" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dáta sa nepodarilo načítať"
+          }
+        }
+      }
+    },
+    "Waiting for data" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Čakám na dáta"
+          }
+        }
+      }
+    },
+    "Waiting for main sleep" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Čaká na hlavný spánok"
+          }
+        }
+      }
+    },
+    "Watch Metrics" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch Metrics"
+          }
+        }
+      }
+    },
+    "Value" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hodnota"
+          }
+        }
+      }
+    },
+    "Watch Metrics is not a medical device." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch Metrics nie je zdravotnícka pomôcka."
+          }
+        }
+      }
+    },
+    "What this value means" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Čo hodnota znamená"
+          }
+        }
+      }
+    },
+    "Within normal range" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V bežnom rozsahu"
+          }
+        }
+      }
+    },
+    "within personal range" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v osobnom pásme"
+          }
+        }
+      }
+    },
+    "Within personal range" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V osobnom pásme"
+          }
+        }
+      }
+    },
+    "within range" : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v norme"
+          }
+        }
+      }
+    },
+    "Your nightly median SDNN compared with your personal 7/28-day baseline." : {
+      "localizations" : {
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nočný medián SDNN porovnávame s vašou osobnou 7/28-dňovou baseline."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

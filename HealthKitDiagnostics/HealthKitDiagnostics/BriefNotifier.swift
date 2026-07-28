@@ -27,8 +27,8 @@ struct BriefNotifier {
     func notify(_ content: BriefContent) async throws {
         try await ensureAuthorized()
         let notificationContent = UNMutableNotificationContent()
-        notificationContent.title = content.title
-        notificationContent.body = BriefRenderer.renderLines(content.lines)
+        notificationContent.title = BriefLocalization.title(content)
+        notificationContent.body = BriefLocalization.renderLines(content.lines)
         notificationContent.sound = .default
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: notificationContent, trigger: nil)
@@ -52,6 +52,6 @@ enum BriefNotifierError: LocalizedError {
     case authorizationDenied
 
     var errorDescription: String? {
-        "Notifikácie nie sú povolené"
+        String(localized: "Notifications are not allowed")
     }
 }
