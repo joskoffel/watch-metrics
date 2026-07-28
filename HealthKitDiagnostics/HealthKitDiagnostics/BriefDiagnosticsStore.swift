@@ -14,6 +14,12 @@ struct BriefDiagnosticSnapshot {
     let lastObserverOutcome: String?
     let sleepBackgroundDeliveryStatus: String?
     let weatherStatus: String?
+    let resolvedMainSleepEnd: Date?
+    let intendedDeliveryDate: Date?
+    let fallbackFireDate: Date?
+    let fallbackStatus: String?
+    let wasDeduped: Bool
+    let notificationError: String?
 }
 
 struct BriefDiagnosticsStore {
@@ -29,6 +35,12 @@ struct BriefDiagnosticsStore {
         static let lastObserverOutcome = "BriefDiagnostics.lastObserverOutcome"
         static let sleepBackgroundDeliveryStatus = "BriefDiagnostics.sleepBackgroundDeliveryStatus"
         static let weatherStatus = "BriefDiagnostics.weatherStatus"
+        static let resolvedMainSleepEnd = "BriefDiagnostics.resolvedMainSleepEnd"
+        static let intendedDeliveryDate = "BriefDiagnostics.intendedDeliveryDate"
+        static let fallbackFireDate = "BriefDiagnostics.fallbackFireDate"
+        static let fallbackStatus = "BriefDiagnostics.fallbackStatus"
+        static let wasDeduped = "BriefDiagnostics.wasDeduped"
+        static let notificationError = "BriefDiagnostics.notificationError"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -77,6 +89,25 @@ struct BriefDiagnosticsStore {
         defaults.set(status, forKey: Key.weatherStatus)
     }
 
+    func recordResolvedSleep(end: Date?, intendedDelivery: Date?) {
+        if let end { defaults.set(end, forKey: Key.resolvedMainSleepEnd) } else { defaults.removeObject(forKey: Key.resolvedMainSleepEnd) }
+        if let intendedDelivery { defaults.set(intendedDelivery, forKey: Key.intendedDeliveryDate) } else { defaults.removeObject(forKey: Key.intendedDeliveryDate) }
+    }
+
+    func recordFallback(fireDate: Date?, status: String) {
+        if let fireDate { defaults.set(fireDate, forKey: Key.fallbackFireDate) } else { defaults.removeObject(forKey: Key.fallbackFireDate) }
+        defaults.set(status, forKey: Key.fallbackStatus)
+    }
+
+    func recordDeduped(_ deduped: Bool) {
+        defaults.set(deduped, forKey: Key.wasDeduped)
+    }
+
+    func recordNotificationError(_ error: Error?) {
+        if let error { defaults.set(error.localizedDescription, forKey: Key.notificationError) }
+        else { defaults.removeObject(forKey: Key.notificationError) }
+    }
+
     func snapshot() -> BriefDiagnosticSnapshot {
         BriefDiagnosticSnapshot(
             lastAttemptDate: defaults.object(forKey: Key.lastAttemptDate) as? Date,
@@ -87,7 +118,13 @@ struct BriefDiagnosticsStore {
             lastObserverTriggerDate: defaults.object(forKey: Key.lastObserverTriggerDate) as? Date,
             lastObserverOutcome: defaults.string(forKey: Key.lastObserverOutcome),
             sleepBackgroundDeliveryStatus: defaults.string(forKey: Key.sleepBackgroundDeliveryStatus),
-            weatherStatus: defaults.string(forKey: Key.weatherStatus)
+            weatherStatus: defaults.string(forKey: Key.weatherStatus),
+            resolvedMainSleepEnd: defaults.object(forKey: Key.resolvedMainSleepEnd) as? Date,
+            intendedDeliveryDate: defaults.object(forKey: Key.intendedDeliveryDate) as? Date,
+            fallbackFireDate: defaults.object(forKey: Key.fallbackFireDate) as? Date,
+            fallbackStatus: defaults.string(forKey: Key.fallbackStatus),
+            wasDeduped: defaults.bool(forKey: Key.wasDeduped),
+            notificationError: defaults.string(forKey: Key.notificationError)
         )
     }
 

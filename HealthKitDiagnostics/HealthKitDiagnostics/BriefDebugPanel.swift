@@ -56,6 +56,13 @@ struct BriefDebugPanel: View {
                 .font(.footnote.weight(.semibold))
             diagnosticLine("Posledný", value: timestamp(diagnostics.lastAttemptDate, with: diagnostics.lastAttemptSource))
             diagnosticLine("Výsledok", value: diagnostics.lastOutcome ?? "Zatiaľ žiadny")
+            diagnosticLine("Deduplikácia", value: diagnostics.wasDeduped ? "Áno" : "Nie")
+            diagnosticLine("Hlavný spánok", value: timestamp(diagnostics.resolvedMainSleepEnd))
+            diagnosticLine("Plán doručenia", value: timestamp(diagnostics.intendedDeliveryDate))
+            diagnosticLine("Lokálny fallback", value: fallbackStatus)
+            if let error = diagnostics.notificationError {
+                diagnosticLine("Notifikácia", value: "Zlyhala: \(error)")
+            }
             diagnosticLine("Ďalší", value: timestamp(diagnostics.nextRefreshDate))
             diagnosticLine("Sleep observer", value: timestamp(diagnostics.lastObserverTriggerDate))
             diagnosticLine("Observer výsledok", value: diagnostics.lastObserverOutcome ?? "Zatiaľ žiadny")
@@ -84,6 +91,12 @@ struct BriefDebugPanel: View {
         guard let date else { return "Zatiaľ žiadny" }
         let formatted = date.formatted(date: .abbreviated, time: .shortened)
         return source.map { "\(formatted) (\($0))" } ?? formatted
+    }
+
+    private var fallbackStatus: String {
+        let fire = timestamp(diagnostics.fallbackFireDate)
+        let status = diagnostics.fallbackStatus ?? "Zatiaľ nevyhodnotený"
+        return diagnostics.fallbackFireDate == nil ? status : "\(fire) — \(status)"
     }
 
     /// Shows the policy's raw decision category at a glance (color-coded

@@ -25,6 +25,7 @@ struct BriefNotifier {
     }
 
     func notify(_ content: BriefContent) async throws {
+        try await ensureAuthorized()
         let notificationContent = UNMutableNotificationContent()
         notificationContent.title = content.title
         notificationContent.body = BriefRenderer.renderLines(content.lines)
@@ -33,8 +34,24 @@ struct BriefNotifier {
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: notificationContent, trigger: nil)
         try await center.add(request)
     }
+
+    private func ensureAuthorized() async throws {
+        let settings = await center.notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional:
+            return
+        case .notDetermined, .denied:
+            throw BriefNotifierError.authorizationDenied
+        @unknown default:
+            throw BriefNotifierError.authorizationDenied
+        }
+    }
 }
 
-enum BriefNotifierError: Error {
+enum BriefNotifierError: LocalizedError {
     case authorizationDenied
+
+    var errorDescription: String? {
+        "Notifikácie nie sú povolené"
+    }
 }

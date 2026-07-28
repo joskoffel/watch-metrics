@@ -54,12 +54,6 @@ public enum BriefDeliveryPolicy {
             let windowStart = calendar.date(
                 bySettingHour: BriefConstants.nightWindowStartHour, minute: 0, second: 0, of: yesterday
             ),
-            let earliestDelivery = calendar.date(
-                bySettingHour: BriefConstants.earliestDeliveryHour,
-                minute: BriefConstants.earliestDeliveryMinute,
-                second: 0,
-                of: today
-            ),
             let latestDelivery = calendar.date(
                 bySettingHour: BriefConstants.latestDeliveryHour,
                 minute: BriefConstants.latestDeliveryMinute,
@@ -84,12 +78,9 @@ public enum BriefDeliveryPolicy {
             return .skip(.alreadyDelivered)
         }
 
-        guard let afterWake = calendar.date(
-            byAdding: .minute, value: BriefConstants.delayAfterWakeMinutes, to: main.end
-        ) else {
+        guard let deliveryTime = BriefFallbackPlanning.deliveryDate(for: main, now: now, calendar: calendar) else {
             return .retry(after: BriefConstants.retryInterval)
         }
-        let deliveryTime = min(max(afterWake, earliestDelivery), latestDelivery)
 
         if now < deliveryTime {
             return .retry(after: deliveryTime.timeIntervalSince(now))

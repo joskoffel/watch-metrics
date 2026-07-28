@@ -67,3 +67,18 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         DEVELOPMENT_TEAM: "XXRA2Z8LT5"
         CODE_SIGN_STYLE: Automatic
+
+  WatchMetricsTests:
+    type: bundle.unit-test
+    platform: watchOS
+    sources:
+      - path: HealthKitDiagnosticsTests
+    dependencies:
+      - target: WatchMetrics
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.watchmetrics.WatchMetrics.Tests
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        DEVELOPMENT_TEAM: "XXRA2Z8LT5"
+        CODE_SIGN_STYLE: Automatic
