@@ -1,6 +1,6 @@
 [# Project status — watch-metrics
 
-Posledná aktualizácia: 2026-07-26
+Posledná aktualizácia: 2026-07-28
 
 ## Čo je to
 
@@ -95,11 +95,11 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
   nepoužívajú sa v produkčnom HealthKit behu.
 - `WatchMetricsWidgetExtension` ostáva statická bez App Group a live HealthKit
   zdieľania. Tap otvorí hostiteľskú aplikáciu.
-- Aktuálny stabilný používateľský HRV status je ešte pôvodný denný SDNN status.
-  RMSSD a nočný heart-rate settling sú experimentálne auditné výstupy, nie
-  produkčný recovery verdict. HRV Status 2.0, adaptívne pásmo, morning-first
-  Today, swipe dní a HRV-first jediný ranný brief čakajú na výsledkový
-  checkpoint po fyzickom 28-nočnom audite.
+- Autoritatívny používateľský HRV status a `RecoverySignal` zostávajú pôvodné
+  SDNN výsledky. Produkčný detail **Nočná HRV** ich dopĺňa o RR-derived RMSSD,
+  jeho vlastnú 7/28-dňovú osobnú baseline a kvalitatívnu zhodu signálov.
+  RMSSD je voliteľné: chýbajúca noc, baseline alebo oprávnenie nepotlačí SDNN
+  ani ranný brief. Nočný heart-rate settling zostáva iba auditný výstup.
 - Budúce chunky: historický sleep chart, live metric complication, readiness,
   respiratory rate a VO₂max. Generický sleep/readiness score sa neplánuje.
 
@@ -216,6 +216,13 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
     sumarizuje SDNN/RMSSD a validačný nočný pulz za 28 nocí. Automatizované
     testy neobsahujú osobné dáta; výsledné pokrytie treba odčítať na fyzických
     hodinkách pred rozhodnutím o HRV Status 2.0.
+15. ~~HRV 2.0 — produkčný kombinovaný detail SDNN + RMSSD~~ ✅ (2026-07-28) —
+    9-nočný audit potvrdil SDNN 8/9 a RMSSD 7/9 nocí, s mediánom 4 heartbeat
+    série a 142 RR intervalov/noc. `RMSSDStatus` v MetricsCore používa rovnakú
+    osobnú ±10 % HRV konvenciu a vlastnú 7/28-dňovú baseline; agreement insight
+    iba vysvetľuje zhodu smerov. `DailyOverviewStore` načíta najviac 28 platných
+    RMSSD nocí cez presné intervaly hlavného spánku. `BriefRunner`,
+    `RecoverySignal`, weather a notifikačné časovanie zostali bez RMSSD.
 
 ## Nástroje a workflow
 

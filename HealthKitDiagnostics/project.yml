@@ -80,5 +80,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.watchmetrics.WatchMetrics.Tests
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "4"
+        GENERATE_INFOPLIST_FILE: YES
         DEVELOPMENT_TEAM: "XXRA2Z8LT5"
         CODE_SIGN_STYLE: Automatic

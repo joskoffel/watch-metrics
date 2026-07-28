@@ -28,6 +28,36 @@ public enum HeartbeatEventMappingError: LocalizedError, Equatable {
 }
 
 public enum HeartbeatEventMapper {
+    public struct UsableSeries: Equatable {
+        public let seriesIndex: Int
+        public let intervals: [RRInterval]
+
+        public init(seriesIndex: Int, intervals: [RRInterval]) {
+            self.seriesIndex = seriesIndex
+            self.intervals = intervals
+        }
+    }
+
+    public struct SeriesFailure: Equatable {
+        public let seriesIndex: Int
+        public let reason: HeartbeatEventMappingError
+
+        public init(seriesIndex: Int, reason: HeartbeatEventMappingError) {
+            self.seriesIndex = seriesIndex
+            self.reason = reason
+        }
+    }
+
+    public struct IndependentMappingResult: Equatable {
+        public let usableSeries: [UsableSeries]
+        public let failures: [SeriesFailure]
+
+        public init(usableSeries: [UsableSeries], failures: [SeriesFailure]) {
+            self.usableSeries = usableSeries
+            self.failures = failures
+        }
+    }
+
     public static func intervals(from events: [HeartbeatEvent]) throws -> [RRInterval] {
         var previousTime: TimeInterval?
         var intervals: [RRInterval] = []
@@ -52,5 +82,30 @@ public enum HeartbeatEventMapper {
 
     public static func intervals(fromSeries series: [[HeartbeatEvent]]) throws -> [RRInterval] {
         try series.flatMap(intervals(from:))
+    }
+
+    /// Maps every series in isolation. A malformed series is transparent in
+    /// `failures` and cannot erase or bridge the valid intervals of another
+    /// series.
+    public static func mapIndependently(_ series: [[HeartbeatEvent]]) -> IndependentMappingResult {
+        var usableSeries: [UsableSeries] = []
+        var failures: [SeriesFailure] = []
+
+        for (seriesIndex, events) in series.enumerated() {
+            do {
+                usableSeries.append(
+                    UsableSeries(
+                        seriesIndex: seriesIndex,
+                        intervals: try intervals(from: events)
+                    )
+                )
+            } catch let reason as HeartbeatEventMappingError {
+                failures.append(SeriesFailure(seriesIndex: seriesIndex, reason: reason))
+            } catch {
+                assertionFailure("HeartbeatEventMapper emitted an unexpected error: \(error)")
+            }
+        }
+
+        return IndependentMappingResult(usableSeries: usableSeries, failures: failures)
     }
 }

@@ -24,6 +24,7 @@ enum NotificationAccess: String {
 final class DailyOverviewStore {
     private let sleepIntegration = SleepIntegration()
     private let hrvIntegration = HRVIntegration()
+    private let rmssdIntegration = RMSSDIntegration()
     private let rhrIntegration = RHRIntegration()
     private let spo2Integration = SpO2Integration()
     private let briefStore = BriefStore()
@@ -37,15 +38,20 @@ final class DailyOverviewStore {
     private(set) var snapshot: DailyDashboardSnapshot
     private(set) var history: [DailyDashboardSnapshot] = []
     private(set) var hrvHistory: [DatedMetric<HRVStatus>] = []
+    private(set) var rmssdHistory: [DatedMetric<Double>] = []
     private(set) var rhrHistory: [DatedMetric<RHRStatus>] = []
     private(set) var spo2History: [DatedMetric<SpO2Status>] = []
     private(set) var sleepState: DataLoadState = .idle
     private(set) var hrvState: DataLoadState = .idle
+    private(set) var rmssdState: DataLoadState = .idle
     private(set) var rhrState: DataLoadState = .idle
     private(set) var spo2State: DataLoadState = .idle
     private(set) var notificationAccess: NotificationAccess = .unknown
     private(set) var notificationTestMessage: String?
     private(set) var isLoading = false
+    private(set) var rmssdValue: Double?
+    private(set) var rmssdStatus: RMSSDStatus?
+    private(set) var hrvAgreement: HRVAgreementInsight = .insufficientRMSSD
 
     init(referenceDate: Date = Date()) {
         self.referenceDate = referenceDate
@@ -57,6 +63,9 @@ final class DailyOverviewStore {
         sample snapshot: DailyDashboardSnapshot,
         history: [DailyDashboardSnapshot] = [],
         hrvHistory: [DatedMetric<HRVStatus>] = [],
+        rmssdHistory: [DatedMetric<Double>] = [],
+        rmssdValue: Double? = nil,
+        rmssdStatus: RMSSDStatus? = nil,
         rhrHistory: [DatedMetric<RHRStatus>] = [],
         spo2History: [DatedMetric<SpO2Status>] = [],
         states: DataLoadState = .loaded
@@ -65,10 +74,17 @@ final class DailyOverviewStore {
         self.snapshot = snapshot
         self.history = history
         self.hrvHistory = hrvHistory
+        self.rmssdHistory = rmssdHistory
+        self.rmssdValue = rmssdValue
+        self.rmssdStatus = rmssdStatus
+        self.hrvAgreement = HRVAgreementInsight.evaluate(
+            sdnn: snapshot.hrv, rmssd: rmssdStatus
+        )
         self.rhrHistory = rhrHistory
         self.spo2History = spo2History
         self.sleepState = states
         self.hrvState = states
+        self.rmssdState = rmssdValue == nil ? .empty : states
         self.rhrState = states
         self.spo2State = states
         self.usesHealthKit = false
@@ -104,6 +120,11 @@ final class DailyOverviewStore {
         isLoading = true
         sleepState = .loading
         hrvState = .loading
+        rmssdState = .loading
+        rmssdValue = nil
+        rmssdStatus = nil
+        rmssdHistory = []
+        hrvAgreement = .insufficientRMSSD
         rhrState = .loading
         spo2State = .loading
 
@@ -113,6 +134,7 @@ final class DailyOverviewStore {
             guard generation == loadGeneration else { return }
             sleepState = .permissionDenied
             hrvState = .permissionDenied
+            rmssdState = .permissionDenied
             rhrState = .permissionDenied
             spo2State = .permissionDenied
             isLoading = false
@@ -161,6 +183,27 @@ final class DailyOverviewStore {
             spo2: spo2History
         )
         isLoading = false
+
+        // RMSSD is an optional enrichment. The authoritative dashboard is
+        // already usable before these more expensive heartbeat-series queries
+        // begin, and the morning brief never instantiates this integration.
+        await rmssdIntegration.run(
+            referenceDate: self.referenceDate,
+            nights: nights,
+            requestAccess: true
+        )
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+        rmssdValue = rmssdIntegration.nightlyValue
+        rmssdStatus = rmssdIntegration.status
+        rmssdHistory = rmssdIntegration.history
+        rmssdState = Self.state(
+            valueExists: rmssdValue != nil,
+            text: rmssdIntegration.statusText
+        )
+        hrvAgreement = HRVAgreementInsight.evaluate(
+            sdnn: snapshot.hrv,
+            rmssd: rmssdStatus
+        )
     }
 
     func refreshNotificationAccess() async {

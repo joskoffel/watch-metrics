@@ -45,26 +45,28 @@ final class HeartbeatSeriesService {
     func load(in interval: DateInterval) async throws -> HeartbeatNightResult {
         try Task.checkCancellation()
         let samples = try await fetchSeries(in: interval)
+        var eventSeries: [[HeartbeatEvent]] = []
+        eventSeries.reserveCapacity(samples.count)
+
+        for sample in samples {
+            try Task.checkCancellation()
+            eventSeries.append(try await fetchEvents(in: sample))
+        }
+
+        let mapping = HeartbeatEventMapper.mapIndependently(eventSeries)
         var rawSeries: [[RRInterval]] = []
         var acceptedSeries: [[RRInterval]] = []
 
-        var unusableSeries: [HeartbeatSeriesFailure] = []
-        for (index, sample) in samples.enumerated() {
-            try Task.checkCancellation()
-            let events = try await fetchEvents(in: sample)
-            do {
-                let raw = try HeartbeatEventMapper.intervals(from: events)
-                rawSeries.append(raw)
-                acceptedSeries.append(RRArtifactFilter.filter(raw))
-            } catch let error as HeartbeatEventMappingError {
-                unusableSeries.append(
-                    HeartbeatSeriesFailure(
-                        seriesIndex: index + 1,
-                        seriesStart: sample.startDate,
-                        reason: error.localizedDescription
-                    )
-                )
-            }
+        for usable in mapping.usableSeries {
+            rawSeries.append(usable.intervals)
+            acceptedSeries.append(RRArtifactFilter.filter(usable.intervals))
+        }
+        let unusableSeries = mapping.failures.map { failure in
+            HeartbeatSeriesFailure(
+                seriesIndex: failure.seriesIndex + 1,
+                seriesStart: samples[failure.seriesIndex].startDate,
+                reason: failure.reason.localizedDescription
+            )
         }
 
         return HeartbeatNightResult(

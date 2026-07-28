@@ -24,10 +24,11 @@ pre implementáciu:
   výpočet sa **nikdy nesmie blokovať** na chýbajúcom VO2max.
 - **AppleSleepingWristTemperature (M11)**: 1 vzorka/noc — je to už Applov
   hotový nočný priemer. Neagregujeme ju, berieme ako finálnu dennú hodnotu.
-- **HKHeartbeatSeries / RR intervaly (RMSSD)**: nie sú v Health exporte.
-  Dostupnosť treba overiť priamo cez `HKHeartbeatSeriesQuery` v appke
-  (samostatná úloha, nie cez export). Kým sa neoverí, staviame len na
-  **SDNN**, nie RMSSD.
+- **HKHeartbeatSeries / RR intervaly (RMSSD)**: nie sú v Health exporte,
+  ale dostupnosť cez `HKHeartbeatSeriesQuery` je overená na reálnych
+  hodinkách. Deväťnočný audit našiel RMSSD v 7/9 nocí (medián 4 série a
+  142 RR intervalov/noc), preto RMSSD dopĺňa produkčný detail HRV. Existujúci
+  **SDNN** status a recovery signal zostávajú autoritatívne a nezmenené.
 
 ## Sources/MetricsCore
 

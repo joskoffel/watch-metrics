@@ -34,6 +34,11 @@ enum PreviewData {
             sample: snapshot,
             history: history,
             hrvHistory: history.compactMap { day in day.hrv.map { DatedMetric(date: day.referenceDate, value: $0) } },
+            rmssdHistory: history.enumerated().map {
+                DatedMetric(date: $0.element.referenceDate, value: 46 + Double($0.offset % 5))
+            },
+            rmssdValue: 49,
+            rmssdStatus: RMSSDStatus(value: 49, level: .normal, confidence: .medium),
             rhrHistory: history.compactMap { day in day.rhr.map { DatedMetric(date: day.referenceDate, value: $0) } },
             spo2History: history.compactMap { day in day.spo2.map { DatedMetric(date: day.referenceDate, value: $0) } }
         )

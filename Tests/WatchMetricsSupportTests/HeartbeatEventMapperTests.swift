@@ -60,3 +60,29 @@ import Testing
         ])
     }
 }
+
+@Test func malformedSeriesDoesNotEraseIntervalsFromOtherSeries() {
+    let result = HeartbeatEventMapper.mapIndependently([
+        [
+            HeartbeatEvent(timeSinceSeriesStart: 0.1, precededByGap: false),
+            HeartbeatEvent(timeSinceSeriesStart: 0.9, precededByGap: false),
+            HeartbeatEvent(timeSinceSeriesStart: 1.75, precededByGap: false)
+        ],
+        [
+            HeartbeatEvent(timeSinceSeriesStart: 0.8, precededByGap: false),
+            HeartbeatEvent(timeSinceSeriesStart: 0.7, precededByGap: false)
+        ]
+    ])
+
+    #expect(result.usableSeries.count == 1)
+    #expect(result.usableSeries[0].seriesIndex == 0)
+    #expect(result.usableSeries[0].intervals.map(\.milliseconds) == [800, 850])
+    #expect(result.failures.count == 1)
+    #expect(result.failures[0].seriesIndex == 1)
+    #expect(result.failures[0].reason == .nonIncreasingTime)
+    #expect(
+        SeriesRMSSDAggregator.calculate(
+            from: result.usableSeries.map(\.intervals)
+        ) == 50
+    )
+}

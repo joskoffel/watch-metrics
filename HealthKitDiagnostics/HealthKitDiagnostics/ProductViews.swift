@@ -44,11 +44,11 @@ struct TodayView: View {
                     HRVDetailView(store: store)
                 } label: {
                     metricCard(
-                        title: "HRV",
+                        title: "Nočná HRV",
                         symbol: "waveform.path.ecg",
                         value: store.snapshot.hrv.map { "\(Int($0.value.rounded())) ms" },
                         subtitle: store.snapshot.hrv.map {
-                            "\(hrvLevel($0.level)) · \(confidenceText($0.confidence)) istota"
+                            "SDNN · \(hrvLevel($0.level))"
                         } ?? "Variabilita srdcového rytmu",
                         color: store.snapshot.hrv.map { hrvColor($0.level) } ?? AppTheme.accent,
                         state: store.hrvState
@@ -258,16 +258,86 @@ struct HRVDetailView: View {
     let store: DailyOverviewStore
 
     var body: some View {
-        MetricDetailContainer(
-            title: "HRV",
-            symbol: "waveform.path.ecg",
-            value: store.snapshot.hrv.map { "\(Int($0.value.rounded())) ms" },
-            status: store.snapshot.hrv.map { "\(hrvLevel($0.level)) · \(confidenceText($0.confidence)) istota" },
-            explanation: "Variabilita času medzi údermi srdca. Porovnávame ju s vašou osobnou históriou.",
-            state: store.hrvState
-        ) {
-            MetricLineChart(points: store.hrvHistory.map { ($0.date, $0.value.value) }, color: AppTheme.accent)
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppTheme.spacing) {
+                Label("Nočná HRV", systemImage: "waveform.path.ecg")
+                    .foregroundStyle(AppTheme.accent)
+
+                StatusBadge(text: hrvAgreementText(store.hrvAgreement))
+
+                hrvMetricSection(
+                    title: "SDNN · Apple Health",
+                    value: store.snapshot.hrv.map { "\(Int($0.value.rounded())) ms" },
+                    status: store.snapshot.hrv.map {
+                        "\(hrvLevel($0.level)) · \(confidenceText($0.confidence)) istota"
+                    },
+                    state: store.hrvState,
+                    explanation: "Nočný medián SDNN porovnávame s vašou osobnou 7/28-dňovou baseline."
+                ) {
+                    MetricLineChart(
+                        points: store.hrvHistory.map { ($0.date, $0.value.value) },
+                        color: AppTheme.accent
+                    )
+                }
+
+                hrvMetricSection(
+                    title: "RMSSD · z RR intervalov",
+                    value: store.rmssdValue.map { "\(Int($0.rounded())) ms" },
+                    status: store.rmssdStatus.map {
+                        "\(hrvLevel($0.level)) · \(confidenceText($0.confidence)) istota"
+                    },
+                    state: store.rmssdState,
+                    explanation: "RMSSD počítame zo samostatných heartbeat sérií počas hlavného spánku; hranice sérií nikdy nespájame."
+                ) {
+                    if store.rmssdValue != nil {
+                        MetricLineChart(
+                            points: store.rmssdHistory.map { ($0.date, $0.value) },
+                            color: .cyan
+                        )
+                    } else if store.rmssdState != .loading {
+                        Text("Nedostatok RMSSD dát")
+                            .font(.caption2)
+                            .foregroundStyle(AppTheme.secondaryText)
+                    }
+                }
+            }
+            .padding(.horizontal, 8)
         }
+        .navigationTitle("Nočná HRV")
+        .containerBackground(AppTheme.background.gradient, for: .navigation)
+    }
+
+    private func hrvMetricSection<Content: View>(
+        title: String,
+        value: String?,
+        status: String?,
+        state: DataLoadState,
+        explanation: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.footnote.weight(.semibold))
+            if state == .loading {
+                PulsingSkeleton()
+            } else if let value {
+                Text(value).font(.title2.weight(.bold))
+                if let status {
+                    StatusBadge(text: status)
+                } else {
+                    StatusBadge(text: "Nedostatok dát pre osobnú baseline")
+                }
+            } else {
+                Text(title.hasPrefix("RMSSD") ? "Nedostatok RMSSD dát" : stateMessage(state))
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+            Text(explanation)
+                .font(.caption2)
+                .foregroundStyle(AppTheme.secondaryText)
+            content()
+        }
+        .cardStyle()
     }
 }
 
@@ -482,6 +552,15 @@ func hrvLevel(_ level: HRVStatusLevel) -> String {
     case .low: "nižšie než zvyčajne"
     case .normal: "v osobnom pásme"
     case .high: "vyššie než zvyčajne"
+    }
+}
+
+func hrvAgreementText(_ insight: HRVAgreementInsight) -> String {
+    switch insight {
+    case .bothLower: "Oba signály nižšie než osobná baseline"
+    case .bothTypicalOrHigher: "Oba signály v osobnom pásme alebo vyššie"
+    case .mixed: "Zmiešané HRV signály"
+    case .insufficientRMSSD: "Nedostatok RMSSD dát"
     }
 }
 

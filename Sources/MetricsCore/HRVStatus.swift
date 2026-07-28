@@ -9,10 +9,8 @@ public enum HRVStatusLevel: Equatable {
 /// M1/M2 — daily HRV status: a day's median SDNN compared against the
 /// 7d/28d rolling baseline from `BaselineTracker`.
 ///
-/// Uses SDNN, not RMSSD: real RR intervals aren't available yet (pending
-/// `HKHeartbeatSeriesQuery` verification — see docs/data-availability-report.md),
-/// so SDNN samples from the Health export are the only real daily HRV
-/// signal today.
+/// This remains the authoritative SDNN status. RR-derived RMSSD has its own
+/// baseline-relative status and does not alter this result.
 public struct HRVStatus: Equatable {
     public let value: Double
     public let level: HRVStatusLevel
