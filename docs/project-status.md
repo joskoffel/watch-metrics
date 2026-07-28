@@ -81,9 +81,12 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
 - Reálne napojené dáta: hlavný spánok so `asleepDuration`, nočné HRV SDNN,
   denný Apple Health resting heart rate a nočné SpO₂. HRV/RHR/SpO₂ poskytujú
   kompaktný 14-dňový trend. RHR sa zámerne neoznačuje ako nočné meranie.
-- Today obsahuje štyri metriky a stav briefu; History otvára rovnaký
-  reference-date-aware dashboard. Settings obsahuje notifikácie, bezpečný test,
-  HealthKit informáciu a About.
+- Today je tmavý recovery-first dashboard: kvalitatívny `RecoverySignal` tvorí
+  hero s jedným pomalým dekoratívnym pulzom a štyri metriky sú v kompaktnom
+  2×2 gride. Reduce Motion pulz vypne a historické dni používajú statický hero.
+  Ranný brief je kompaktný footer; History otvára rovnaký reference-date-aware
+  dashboard. Settings obsahuje notifikácie, bezpečný test, HealthKit informáciu
+  a About.
 - Diagnostics, heartbeat series a `BriefDebugPanel` sú iba v Developer menu.
   Developer menu navyše obsahuje **HRV Data Audit** pre posledných 28
   vyriešených nocí. Audit lokálne porovnáva nočný SDNN s RMSSD, reportuje
@@ -91,8 +94,9 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
   mediány pokrytia a riedke/chybné noci. Zároveň validačne počíta počet,
   medián, robustnú dolnú hodnotu a pokrytie tretín nočného heart rate.
   Nič neposiela mimo zariadenia a osobné hodnoty nie sú súčasťou repozitára.
-  SwiftUI sample modely pokrývajú Today, detail, History, empty aj error stav a
-  nepoužívajú sa v produkčnom HealthKit behu.
+  SwiftUI sample modely pokrývajú recovery stavy, čiastočné/loading dáta,
+  malé/Ultra rozmery, statický historický Today, detail, History aj error stav
+  a nepoužívajú sa v produkčnom HealthKit behu.
 - `WatchMetricsWidgetExtension` ostáva statická bez App Group a live HealthKit
   zdieľania. Tap otvorí hostiteľskú aplikáciu.
 - Autoritatívny používateľský HRV status a `RecoverySignal` zostávajú pôvodné

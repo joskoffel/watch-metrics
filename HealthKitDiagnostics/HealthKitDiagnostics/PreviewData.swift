@@ -5,17 +5,13 @@ import SwiftUI
 @MainActor
 enum PreviewData {
     static let now = Date(timeIntervalSince1970: 1_767_268_800)
-    static let snapshot = DailyDashboardSnapshot(
-        referenceDate: now,
-        sleep: SleepSession(
-            start: now.addingTimeInterval(-8.1 * 3600),
-            end: now.addingTimeInterval(-1.2 * 3600),
-            asleepDuration: 6.55 * 3600
-        ),
-        hrv: HRVStatus(value: 54, level: .normal, confidence: .high),
-        rhr: RHRStatus(value: 57, level: .normal, confidence: .medium),
-        spo2: SpO2Status(value: 96, level: .normal, confidence: .medium)
+    static let sleep = SleepSession(
+        start: now.addingTimeInterval(-8.1 * 3600),
+        end: now.addingTimeInterval(-1.2 * 3600),
+        asleepDuration: 6.55 * 3600
     )
+
+    static let snapshot = snapshot(for: .typical)
 
     static var history: [DailyDashboardSnapshot] {
         (0..<14).map { offset in
@@ -30,8 +26,13 @@ enum PreviewData {
     }
 
     static var store: DailyOverviewStore {
-        DailyOverviewStore(
-            sample: snapshot,
+        store(for: .typical)
+    }
+
+    static func store(for level: RecoverySignalLevel) -> DailyOverviewStore {
+        let selected = snapshot(for: level)
+        return DailyOverviewStore(
+            sample: selected,
             history: history,
             hrvHistory: history.compactMap { day in day.hrv.map { DatedMetric(date: day.referenceDate, value: $0) } },
             rmssdHistory: history.enumerated().map {
@@ -44,17 +45,91 @@ enum PreviewData {
         )
     }
 
-    static var emptyStore: DailyOverviewStore {
-        DailyOverviewStore(sample: DailyDashboardSnapshot(referenceDate: now), states: .empty)
+    static var partialStore: DailyOverviewStore {
+        DailyOverviewStore(
+            sample: DailyDashboardSnapshot(
+                referenceDate: now,
+                sleep: sleep,
+                hrv: HRVStatus(value: 51, level: .normal, confidence: .low)
+            ),
+            states: .empty
+        )
+    }
+
+    static var loadingStore: DailyOverviewStore {
+        DailyOverviewStore(
+            sample: DailyDashboardSnapshot(referenceDate: now),
+            states: .loading
+        )
     }
 
     static var errorStore: DailyOverviewStore {
         DailyOverviewStore(sample: DailyDashboardSnapshot(referenceDate: now), states: .failed("HealthKit query"))
     }
+
+    private static func snapshot(for level: RecoverySignalLevel) -> DailyDashboardSnapshot {
+        let statuses: (HRVStatusLevel, RHRStatusLevel)
+        switch level {
+        case .favorable:
+            statuses = (.high, .suppressed)
+        case .typical:
+            statuses = (.normal, .normal)
+        case .mixed:
+            statuses = (.high, .elevated)
+        case .strained:
+            statuses = (.low, .elevated)
+        }
+
+        return DailyDashboardSnapshot(
+            referenceDate: now,
+            sleep: sleep,
+            hrv: HRVStatus(value: 54, level: statuses.0, confidence: .high),
+            rhr: RHRStatus(value: 57, level: statuses.1, confidence: .high),
+            spo2: SpO2Status(value: 96, level: .normal, confidence: .medium)
+        )
+    }
 }
 
-#Preview("Today") {
-    NavigationStack { TodayView(store: PreviewData.store, showsPrimaryNavigation: true) }
+#Preview("Favorable · 40 mm", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack {
+        TodayView(store: PreviewData.store(for: .favorable), showsPrimaryNavigation: true)
+    }
+}
+
+#Preview("Favorable · Ultra", traits: .fixedLayout(width: 205, height: 251)) {
+    NavigationStack {
+        TodayView(store: PreviewData.store(for: .favorable), showsPrimaryNavigation: true)
+    }
+}
+
+#Preview("Strained", traits: .fixedLayout(width: 176, height: 215)) {
+    NavigationStack {
+        TodayView(store: PreviewData.store(for: .strained), showsPrimaryNavigation: true)
+    }
+}
+
+#Preview("Mixed", traits: .fixedLayout(width: 176, height: 215)) {
+    NavigationStack {
+        TodayView(store: PreviewData.store(for: .mixed), showsPrimaryNavigation: true)
+    }
+}
+
+#Preview("Missing recovery · partial", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack {
+        TodayView(store: PreviewData.partialStore, showsPrimaryNavigation: true)
+    }
+}
+
+#Preview("Loading", traits: .fixedLayout(width: 205, height: 251)) {
+    NavigationStack {
+        TodayView(store: PreviewData.loadingStore, showsPrimaryNavigation: true)
+    }
+}
+
+#Preview("Historical · static", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack {
+        TodayView(store: PreviewData.store(for: .typical), showsPrimaryNavigation: false)
+    }
 }
 
 #Preview("HRV detail") {
@@ -63,10 +138,6 @@ enum PreviewData {
 
 #Preview("History") {
     NavigationStack { HistoryView(store: PreviewData.store) }
-}
-
-#Preview("Empty") {
-    NavigationStack { TodayView(store: PreviewData.emptyStore, showsPrimaryNavigation: false) }
 }
 
 #Preview("Error") {

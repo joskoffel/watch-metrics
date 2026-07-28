@@ -18,92 +18,146 @@ struct TodayView: View {
     let store: DailyOverviewStore
     let showsPrimaryNavigation: Bool
 
+    private let metricColumns = [
+        GridItem(.flexible(minimum: 64), spacing: 7),
+        GridItem(.flexible(minimum: 64), spacing: 7)
+    ]
+
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: AppTheme.spacing) {
-                header
-                NavigationLink {
-                    SleepDetailView(store: store)
-                } label: {
-                    metricCard(
-                        title: "Spánok",
-                        symbol: "bed.double.fill",
-                        value: store.snapshot.sleep.map { durationText($0.asleepDuration) },
-                        subtitle: "Skutočný čas spánku",
-                        color: AppTheme.accent,
-                        state: store.sleepState
+        ZStack {
+            DashboardBackground()
+                .ignoresSafeArea()
+
+            ScrollView {
+                LazyVStack(spacing: 11) {
+                    DashboardHeader(
+                        date: store.referenceDate,
+                        dataStatusText: store.dataStatusText,
+                        dataStatusSymbol: dataStatusSymbol
                     )
-                }
-                .buttonStyle(.plain)
 
-                if let recovery = store.snapshot.recovery {
-                    recoveryCard(recovery)
-                }
-
-                NavigationLink {
-                    HRVDetailView(store: store)
-                } label: {
-                    metricCard(
-                        title: "Nočná HRV",
-                        symbol: "waveform.path.ecg",
-                        value: store.snapshot.hrv.map { "\(Int($0.value.rounded())) ms" },
-                        subtitle: store.snapshot.hrv.map {
-                            "SDNN · \(hrvLevel($0.level))"
-                        } ?? "Variabilita srdcového rytmu",
-                        color: store.snapshot.hrv.map { hrvColor($0.level) } ?? AppTheme.accent,
-                        state: store.hrvState
+                    RecoveryHero(
+                        signal: store.snapshot.recovery,
+                        animates: showsPrimaryNavigation
                     )
-                }
-                .buttonStyle(.plain)
 
-                NavigationLink {
-                    RHRDetailView(store: store)
-                } label: {
-                    metricCard(
-                        title: "Pokojový pulz",
-                        symbol: "heart.fill",
-                        value: store.snapshot.rhr.map { "\(Int($0.value.rounded())) bpm" },
-                        subtitle: store.snapshot.rhr.map {
-                            "\(rhrLevel($0.level)) · \(confidenceText($0.confidence)) istota"
-                        } ?? "Pulz v pokoji voči baseline",
-                        color: store.snapshot.rhr.map { rhrColor($0.level) } ?? AppTheme.accent,
-                        state: store.rhrState
-                    )
-                }
-                .buttonStyle(.plain)
+                    LazyVGrid(columns: metricColumns, spacing: 7) {
+                        NavigationLink {
+                            SleepDetailView(store: store)
+                        } label: {
+                            DashboardMetricTile(
+                                title: "SPÁNOK",
+                                accessibilityTitle: "Spánok",
+                                symbol: "bed.double.fill",
+                                value: store.snapshot.sleep.map {
+                                    compactSleepValue($0.asleepDuration)
+                                },
+                                unit: store.snapshot.sleep == nil ? nil : "h",
+                                status: "hlavný spánok",
+                                tint: AppTheme.dashboardViolet,
+                                state: store.sleepState
+                            )
+                        }
+                        .buttonStyle(.plain)
 
-                NavigationLink {
-                    SpO2DetailView(store: store)
-                } label: {
-                    metricCard(
-                        title: "Okysličenie",
-                        symbol: "lungs.fill",
-                        value: store.snapshot.spo2.map { "\(Int($0.value.rounded())) %" },
-                        subtitle: store.snapshot.spo2.map { spo2Level($0.level) } ?? "SpO₂ počas hlavného spánku",
-                        color: store.snapshot.spo2.map { spo2Color($0.level) } ?? AppTheme.accent,
-                        state: store.spo2State
-                    )
-                }
-                .buttonStyle(.plain)
+                        NavigationLink {
+                            HRVDetailView(store: store)
+                        } label: {
+                            DashboardMetricTile(
+                                title: "HRV · SDNN",
+                                accessibilityTitle: "Nočná HRV, SDNN",
+                                symbol: "waveform.path.ecg",
+                                value: store.snapshot.hrv.map {
+                                    "\(Int($0.value.rounded()))"
+                                },
+                                unit: store.snapshot.hrv == nil ? nil : "ms",
+                                status: store.snapshot.hrv.map {
+                                    hrvLevel($0.level)
+                                } ?? "osobná baseline",
+                                tint: store.snapshot.hrv.map {
+                                    dashboardHRVColor($0.level)
+                                } ?? AppTheme.dashboardCyan,
+                                state: store.hrvState
+                            )
+                        }
+                        .buttonStyle(.plain)
 
-                statusCard
+                        NavigationLink {
+                            RHRDetailView(store: store)
+                        } label: {
+                            DashboardMetricTile(
+                                title: "POKOJ. PULZ",
+                                accessibilityTitle: "Pokojový pulz",
+                                symbol: "heart.fill",
+                                value: store.snapshot.rhr.map {
+                                    "\(Int($0.value.rounded()))"
+                                },
+                                unit: store.snapshot.rhr == nil ? nil : "bpm",
+                                status: store.snapshot.rhr.map {
+                                    rhrLevel($0.level)
+                                } ?? "osobná baseline",
+                                tint: store.snapshot.rhr.map {
+                                    dashboardRHRColor($0.level)
+                                } ?? AppTheme.dashboardMagenta,
+                                state: store.rhrState
+                            )
+                        }
+                        .buttonStyle(.plain)
 
-                if showsPrimaryNavigation {
-                    NavigationLink {
-                        HistoryView(store: store)
-                    } label: {
-                        Label("História", systemImage: "calendar")
+                        NavigationLink {
+                            SpO2DetailView(store: store)
+                        } label: {
+                            DashboardMetricTile(
+                                title: "SPO₂",
+                                accessibilityTitle: "Okysličenie krvi",
+                                symbol: "lungs.fill",
+                                value: store.snapshot.spo2.map {
+                                    "\(Int($0.value.rounded()))"
+                                },
+                                unit: store.snapshot.spo2 == nil ? nil : "%",
+                                status: store.snapshot.spo2.map {
+                                    spo2Level($0.level)
+                                } ?? "počas spánku",
+                                tint: store.snapshot.spo2.map {
+                                    dashboardSpO2Color($0.level)
+                                } ?? AppTheme.dashboardBlue,
+                                state: store.spo2State
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    NavigationLink {
-                        SettingsView(store: store)
-                    } label: {
-                        Label("Nastavenia", systemImage: "gearshape")
+
+                    MorningBriefCapsule(text: store.morningBriefText)
+
+                    if showsPrimaryNavigation {
+                        HStack(spacing: 7) {
+                            NavigationLink {
+                                HistoryView(store: store)
+                            } label: {
+                                DashboardSecondaryNavigationLabel(
+                                    title: "História",
+                                    symbol: "calendar"
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            NavigationLink {
+                                SettingsView(store: store)
+                            } label: {
+                                DashboardSecondaryNavigationLabel(
+                                    title: "Nastavenia",
+                                    symbol: "gearshape"
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
+                .padding(.horizontal, 7)
+                .padding(.bottom, 10)
             }
-            .padding(.horizontal, 6)
         }
-        .containerBackground(AppTheme.background.gradient, for: .navigation)
+        .containerBackground(AppTheme.dashboardBackground, for: .navigation)
         .navigationTitle(showsPrimaryNavigation ? "Dnes" : dayTitle(store.referenceDate))
         .task(id: store.referenceDate) {
             await store.load()
@@ -113,84 +167,9 @@ struct TodayView: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(store.referenceDate.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                .font(.headline)
-            Label(store.dataStatusText, systemImage: dataStatusSymbol)
-                .font(.caption2)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     private var dataStatusSymbol: String {
         if store.isLoading { return "arrow.triangle.2.circlepath" }
         return store.snapshot.availableSectionCount == 0 ? "exclamationmark.circle" : "checkmark.circle"
-    }
-
-    private var statusCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Ranný brief", systemImage: "sunrise.fill")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(AppTheme.accent)
-            Text(store.morningBriefText)
-                .font(.caption)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
-        .cardStyle()
-    }
-
-    private func metricCard(
-        title: String,
-        symbol: String,
-        value: String?,
-        subtitle: String,
-        color: Color,
-        state: DataLoadState
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
-                Label(title, systemImage: symbol)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppTheme.accent)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            if state == .loading {
-                PulsingSkeleton()
-                    .frame(height: 34)
-            } else if let value {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Circle().fill(color).frame(width: 9, height: 9)
-                    Text(value).font(.title3.weight(.semibold))
-                }
-                Text(subtitle).font(.caption2).foregroundStyle(AppTheme.secondaryText)
-            } else {
-                Text(stateMessage(state))
-                    .font(.caption)
-                    .foregroundStyle(AppTheme.secondaryText)
-            }
-        }
-        .cardStyle()
-    }
-
-    private func recoveryCard(_ signal: RecoverySignal) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Label("Regenerácia", systemImage: "heart.text.square.fill")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(AppTheme.accent)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Circle().fill(recoveryColor(signal.level)).frame(width: 9, height: 9)
-                Text(signal.briefText).font(.title3.weight(.semibold))
-            }
-            Text("Interpretácia HRV a pokojového pulzu voči vašej histórii")
-                .font(.caption2)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
-        .cardStyle()
     }
 }
 
