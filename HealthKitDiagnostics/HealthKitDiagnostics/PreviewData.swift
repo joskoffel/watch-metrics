@@ -63,6 +63,64 @@ enum PreviewData {
         )
     }
 
+    static var adverseStore: DailyOverviewStore {
+        let sample = DailyDashboardSnapshot(
+            referenceDate: now,
+            sleep: SleepSession(
+                start: now.addingTimeInterval(-6.4 * 3600),
+                end: now.addingTimeInterval(-1.1 * 3600),
+                asleepDuration: 4.85 * 3600
+            ),
+            hrv: HRVStatus(value: 36, level: .low, confidence: .high),
+            rhr: RHRStatus(value: 68, level: .elevated, confidence: .high),
+            spo2: SpO2Status(value: 89, level: .critical, confidence: .low)
+        )
+        return DailyOverviewStore(
+            sample: sample,
+            history: history,
+            hrvHistory: history.compactMap { day in
+                day.hrv.map { DatedMetric(date: day.referenceDate, value: $0) }
+            },
+            rmssdHistory: history.enumerated().map {
+                DatedMetric(date: $0.element.referenceDate, value: 34 + Double($0.offset % 4))
+            },
+            rmssdValue: 35,
+            rmssdStatus: RMSSDStatus(value: 35, level: .low, confidence: .medium),
+            rhrHistory: history.compactMap { day in
+                day.rhr.map { DatedMetric(date: day.referenceDate, value: $0) }
+            },
+            spo2History: history.compactMap { day in
+                day.spo2.map { DatedMetric(date: day.referenceDate, value: $0) }
+            }
+        )
+    }
+
+    static var unavailableStore: DailyOverviewStore {
+        DailyOverviewStore(
+            sample: DailyDashboardSnapshot(referenceDate: now),
+            states: .empty
+        )
+    }
+
+    static var missingBaselineStore: DailyOverviewStore {
+        DailyOverviewStore(
+            sample: DailyDashboardSnapshot(referenceDate: now, sleep: sleep),
+            states: .loaded
+        )
+    }
+
+    static var hrvWithoutRMSSDStore: DailyOverviewStore {
+        DailyOverviewStore(
+            sample: snapshot,
+            history: history,
+            hrvHistory: history.compactMap { day in
+                day.hrv.map { DatedMetric(date: day.referenceDate, value: $0) }
+            },
+            rmssdValue: nil,
+            rmssdStatus: nil
+        )
+    }
+
     static var errorStore: DailyOverviewStore {
         DailyOverviewStore(sample: DailyDashboardSnapshot(referenceDate: now), states: .failed("HealthKit query"))
     }
@@ -132,8 +190,68 @@ enum PreviewData {
     }
 }
 
-#Preview("HRV detail") {
+#Preview("Sleep detail · 40 mm", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { SleepDetailView(store: PreviewData.store) }
+}
+
+#Preview("Sleep detail · loading", traits: .fixedLayout(width: 205, height: 251)) {
+    NavigationStack { SleepDetailView(store: PreviewData.loadingStore) }
+}
+
+#Preview("Sleep detail · unavailable", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { SleepDetailView(store: PreviewData.unavailableStore) }
+}
+
+#Preview("HRV detail · SDNN + RMSSD · Ultra", traits: .fixedLayout(width: 205, height: 251)) {
     NavigationStack { HRVDetailView(store: PreviewData.store) }
+}
+
+#Preview("HRV detail · adverse · 40 mm", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { HRVDetailView(store: PreviewData.adverseStore) }
+}
+
+#Preview("HRV detail · without RMSSD", traits: .fixedLayout(width: 176, height: 215)) {
+    NavigationStack { HRVDetailView(store: PreviewData.hrvWithoutRMSSDStore) }
+}
+
+#Preview("HRV detail · loading", traits: .fixedLayout(width: 205, height: 251)) {
+    NavigationStack { HRVDetailView(store: PreviewData.loadingStore) }
+}
+
+#Preview("HRV detail · missing baseline", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { HRVDetailView(store: PreviewData.missingBaselineStore) }
+}
+
+#Preview("RHR detail · normal · Ultra", traits: .fixedLayout(width: 205, height: 251)) {
+    NavigationStack { RHRDetailView(store: PreviewData.store) }
+}
+
+#Preview("RHR detail · elevated · 40 mm", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { RHRDetailView(store: PreviewData.adverseStore) }
+}
+
+#Preview("RHR detail · loading", traits: .fixedLayout(width: 176, height: 215)) {
+    NavigationStack { RHRDetailView(store: PreviewData.loadingStore) }
+}
+
+#Preview("RHR detail · missing baseline", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { RHRDetailView(store: PreviewData.missingBaselineStore) }
+}
+
+#Preview("SpO₂ detail · normal · Ultra", traits: .fixedLayout(width: 205, height: 251)) {
+    NavigationStack { SpO2DetailView(store: PreviewData.store) }
+}
+
+#Preview("SpO₂ detail · critical · 40 mm", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { SpO2DetailView(store: PreviewData.adverseStore) }
+}
+
+#Preview("SpO₂ detail · loading", traits: .fixedLayout(width: 176, height: 215)) {
+    NavigationStack { SpO2DetailView(store: PreviewData.loadingStore) }
+}
+
+#Preview("SpO₂ detail · unavailable", traits: .fixedLayout(width: 162, height: 197)) {
+    NavigationStack { SpO2DetailView(store: PreviewData.unavailableStore) }
 }
 
 #Preview("History") {

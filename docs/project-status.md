@@ -87,6 +87,12 @@ kopírovať Apple Vitals. Aplikácia nie je zdravotnícka pomôcka.
   Ranný brief je kompaktný footer; History otvára rovnaký reference-date-aware
   dashboard. Settings obsahuje notifikácie, bezpečný test, HealthKit informáciu
   a About.
+- Today aj detaily používajú stabilné identity farby nezávislé od levelu:
+  sleep violet, HRV cyan, RHR magenta a SpO₂ blue. Detail má spoločný hero,
+  tematické obsahové/trend panely a samostatnú textovú status kapsulu so
+  semantickou farbou; level nikdy nepremaľuje identitu metriky. Grafy kreslia
+  iba platné historické body bez smoothingu alebo interpolovania chýbajúcich
+  dát.
 - Diagnostics, heartbeat series a `BriefDebugPanel` sú iba v Developer menu.
   Developer menu navyše obsahuje **HRV Data Audit** pre posledných 28
   vyriešených nocí. Audit lokálne porovnáva nočný SDNN s RMSSD, reportuje

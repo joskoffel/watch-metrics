@@ -229,6 +229,7 @@ struct DashboardMetricTile: View {
     let value: String?
     let unit: String?
     let status: String
+    let statusColor: Color?
     let tint: Color
     let state: DataLoadState
 
@@ -264,11 +265,18 @@ struct DashboardMetricTile: View {
                             metricValue(value, unit: unit, font: .title3, unitFont: .caption2)
                             metricValue(value, unit: unit, font: .headline, unitFont: .caption2)
                         }
-                        Text(status)
-                            .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.62))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
+                        HStack(spacing: 4) {
+                            if let statusColor {
+                                Circle()
+                                    .fill(statusColor)
+                                    .frame(width: 5, height: 5)
+                            }
+                            Text(status)
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.62))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+                        }
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
@@ -459,28 +467,4 @@ private func compactStateMessage(_ state: DataLoadState) -> String {
 func compactSleepValue(_ duration: TimeInterval) -> String {
     let totalMinutes = max(0, Int(duration / 60))
     return "\(totalMinutes / 60):\(String(format: "%02d", totalMinutes % 60))"
-}
-
-func dashboardHRVColor(_ level: HRVStatusLevel) -> Color {
-    switch level {
-    case .low: AppTheme.dashboardAmber
-    case .normal: AppTheme.dashboardCyan
-    case .high: AppTheme.dashboardGreen
-    }
-}
-
-func dashboardRHRColor(_ level: RHRStatusLevel) -> Color {
-    switch level {
-    case .elevated: AppTheme.dashboardMagenta
-    case .normal: AppTheme.dashboardBlue
-    case .suppressed: AppTheme.dashboardGreen
-    }
-}
-
-func dashboardSpO2Color(_ level: SpO2StatusLevel) -> Color {
-    switch level {
-    case .normal: AppTheme.dashboardCyan
-    case .low: AppTheme.dashboardAmber
-    case .critical: AppTheme.dashboardRed
-    }
 }

@@ -1,4 +1,3 @@
-import Charts
 import MetricsCore
 import SwiftUI
 
@@ -54,6 +53,7 @@ struct TodayView: View {
                                 },
                                 unit: store.snapshot.sleep == nil ? nil : "h",
                                 status: "hlavný spánok",
+                                statusColor: nil,
                                 tint: AppTheme.dashboardViolet,
                                 state: store.sleepState
                             )
@@ -74,9 +74,10 @@ struct TodayView: View {
                                 status: store.snapshot.hrv.map {
                                     hrvLevel($0.level)
                                 } ?? "osobná baseline",
-                                tint: store.snapshot.hrv.map {
-                                    dashboardHRVColor($0.level)
-                                } ?? AppTheme.dashboardCyan,
+                                statusColor: store.snapshot.hrv.map {
+                                    hrvStatusColor($0.level)
+                                },
+                                tint: AppTheme.dashboardCyan,
                                 state: store.hrvState
                             )
                         }
@@ -96,9 +97,10 @@ struct TodayView: View {
                                 status: store.snapshot.rhr.map {
                                     rhrLevel($0.level)
                                 } ?? "osobná baseline",
-                                tint: store.snapshot.rhr.map {
-                                    dashboardRHRColor($0.level)
-                                } ?? AppTheme.dashboardMagenta,
+                                statusColor: store.snapshot.rhr.map {
+                                    rhrStatusColor($0.level)
+                                },
+                                tint: AppTheme.dashboardMagenta,
                                 state: store.rhrState
                             )
                         }
@@ -118,9 +120,10 @@ struct TodayView: View {
                                 status: store.snapshot.spo2.map {
                                     spo2Level($0.level)
                                 } ?? "počas spánku",
-                                tint: store.snapshot.spo2.map {
-                                    dashboardSpO2Color($0.level)
-                                } ?? AppTheme.dashboardBlue,
+                                statusColor: store.snapshot.spo2.map {
+                                    spo2StatusColor($0.level)
+                                },
+                                tint: AppTheme.dashboardBlue,
                                 state: store.spo2State
                             )
                         }
@@ -219,16 +222,42 @@ struct SleepDetailView: View {
     let store: DailyOverviewStore
 
     var body: some View {
-        MetricDetailContainer(
-            title: "Spánok",
-            symbol: "bed.double.fill",
-            value: store.snapshot.sleep.map { durationText($0.asleepDuration) },
-            status: store.snapshot.sleep == nil ? nil : "Hlavný spánok",
-            explanation: "Čas skutočne strávený v spánkových fázach. Nezahŕňa bdenie ani čas iba v posteli.",
-            state: store.sleepState
+        MetricDetailScreen(
+            theme: .sleep,
+            value: store.snapshot.sleep.map { compactSleepValue($0.asleepDuration) },
+            unit: store.snapshot.sleep == nil ? nil : "h",
+            source: "Apple Health · hlavný spánok",
+            status: store.snapshot.sleep == nil
+                ? nil
+                : MetricStatusPresentation(
+                    text: "Hlavný spánok",
+                    context: "čas spánku",
+                    color: AppTheme.statusNormal
+                ),
+            state: store.sleepState,
+            unavailableText: detailUnavailableText(store.sleepState)
         ) {
-            Text("Sedemdňový trend sa zobrazí, keď bude dostupná historická sleep pipeline.")
-                .font(.caption2).foregroundStyle(.secondary)
+            MetricDetailPanel(
+                theme: .sleep,
+                title: "Čo hodnota znamená",
+                eyebrow: "Kontext"
+            ) {
+                Text("Čas skutočne strávený v spánkových fázach. Nezahŕňa bdenie ani čas iba v posteli.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            MetricDetailPanel(
+                theme: .sleep,
+                title: "Historický trend",
+                eyebrow: "7 nocí"
+            ) {
+                MetricNeutralPanel(
+                    symbol: "moon.stars",
+                    text: "Trend bude dostupný po zapojení historickej sleep pipeline."
+                )
+            }
         }
     }
 }
@@ -237,86 +266,68 @@ struct HRVDetailView: View {
     let store: DailyOverviewStore
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.spacing) {
-                Label("Nočná HRV", systemImage: "waveform.path.ecg")
-                    .foregroundStyle(AppTheme.accent)
-
-                StatusBadge(text: hrvAgreementText(store.hrvAgreement))
-
-                hrvMetricSection(
-                    title: "SDNN · Apple Health",
-                    value: store.snapshot.hrv.map { "\(Int($0.value.rounded())) ms" },
-                    status: store.snapshot.hrv.map {
-                        "\(hrvLevel($0.level)) · \(confidenceText($0.confidence)) istota"
-                    },
-                    state: store.hrvState,
-                    explanation: "Nočný medián SDNN porovnávame s vašou osobnou 7/28-dňovou baseline."
-                ) {
-                    MetricLineChart(
-                        points: store.hrvHistory.map { ($0.date, $0.value.value) },
-                        color: AppTheme.accent
-                    )
-                }
-
-                hrvMetricSection(
-                    title: "RMSSD · z RR intervalov",
-                    value: store.rmssdValue.map { "\(Int($0.rounded())) ms" },
-                    status: store.rmssdStatus.map {
-                        "\(hrvLevel($0.level)) · \(confidenceText($0.confidence)) istota"
-                    },
-                    state: store.rmssdState,
-                    explanation: "RMSSD počítame zo samostatných heartbeat sérií počas hlavného spánku; hranice sérií nikdy nespájame."
-                ) {
-                    if store.rmssdValue != nil {
-                        MetricLineChart(
-                            points: store.rmssdHistory.map { ($0.date, $0.value) },
-                            color: .cyan
-                        )
-                    } else if store.rmssdState != .loading {
-                        Text("Nedostatok RMSSD dát")
-                            .font(.caption2)
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-                }
+        MetricDetailScreen(
+            theme: .hrv,
+            value: store.snapshot.hrv.map { "\(Int($0.value.rounded()))" },
+            unit: store.snapshot.hrv == nil ? nil : "ms SDNN",
+            source: "Apple Health · nočný SDNN",
+            status: store.snapshot.hrv.map(hrvStatusPresentation),
+            state: store.hrvState,
+            unavailableText: hrvUnavailableText(store.hrvState)
+        ) {
+            MetricDetailPanel(
+                theme: .hrv,
+                title: hrvAgreementText(store.hrvAgreement),
+                eyebrow: "Zhoda signálov"
+            ) {
+                MetricStatusCapsule(status: hrvAgreementPresentation(store.hrvAgreement))
             }
-            .padding(.horizontal, 8)
-        }
-        .navigationTitle("Nočná HRV")
-        .containerBackground(AppTheme.background.gradient, for: .navigation)
-    }
 
-    private func hrvMetricSection<Content: View>(
-        title: String,
-        value: String?,
-        status: String?,
-        state: DataLoadState,
-        explanation: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.footnote.weight(.semibold))
-            if state == .loading {
-                PulsingSkeleton()
-            } else if let value {
-                Text(value).font(.title2.weight(.bold))
-                if let status {
-                    StatusBadge(text: status)
-                } else {
-                    StatusBadge(text: "Nedostatok dát pre osobnú baseline")
-                }
-            } else {
-                Text(title.hasPrefix("RMSSD") ? "Nedostatok RMSSD dát" : stateMessage(state))
+            MetricDetailPanel(
+                theme: .hrv,
+                title: "SDNN",
+                eyebrow: "Autoritatívny signál · Apple Health"
+            ) {
+                MetricValueRow(
+                    value: store.snapshot.hrv.map { "\(Int($0.value.rounded()))" },
+                    unit: "ms",
+                    status: store.snapshot.hrv.map(hrvStatusPresentation),
+                    unavailableText: hrvUnavailableText(store.hrvState)
+                )
+                Text("Nočný medián SDNN porovnávame s vašou osobnou 7/28-dňovou baseline.")
                     .font(.caption)
-                    .foregroundStyle(AppTheme.secondaryText)
+                    .foregroundStyle(.white.opacity(0.64))
+                    .fixedSize(horizontal: false, vertical: true)
+                MetricLineChart(
+                    points: store.hrvHistory.map { ($0.date, $0.value.value) },
+                    theme: .hrv,
+                    variant: .primary
+                )
             }
-            Text(explanation)
-                .font(.caption2)
-                .foregroundStyle(AppTheme.secondaryText)
-            content()
+
+            MetricDetailPanel(
+                theme: .hrv,
+                title: "RMSSD",
+                eyebrow: "Doplnkový signál · RR intervaly"
+            ) {
+                MetricValueRow(
+                    value: store.rmssdValue.map { "\(Int($0.rounded()))" },
+                    unit: "ms",
+                    status: store.rmssdStatus.map(hrvStatusPresentation),
+                    unavailableText: rmssdUnavailableText(store.rmssdState)
+                )
+                Text("RMSSD počítame zo samostatných heartbeat sérií počas hlavného spánku; hranice sérií nikdy nespájame.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.64))
+                    .fixedSize(horizontal: false, vertical: true)
+                MetricLineChart(
+                    points: store.rmssdHistory.map { ($0.date, $0.value) },
+                    theme: .hrv,
+                    variant: .secondary,
+                    unavailableText: "Nedostatok RMSSD dát"
+                )
+            }
         }
-        .cardStyle()
     }
 }
 
@@ -324,15 +335,36 @@ struct RHRDetailView: View {
     let store: DailyOverviewStore
 
     var body: some View {
-        MetricDetailContainer(
-            title: "Pokojový pulz",
-            symbol: "heart.fill",
-            value: store.snapshot.rhr.map { "\(Int($0.value.rounded())) bpm" },
-            status: store.snapshot.rhr.map { "\(rhrLevel($0.level)) · \(confidenceText($0.confidence)) istota" },
-            explanation: "Pokojový pulz je denná hodnota zo Zdravia porovnaná s vašou osobnou baseline.",
-            state: store.rhrState
+        MetricDetailScreen(
+            theme: .restingHeartRate,
+            value: store.snapshot.rhr.map { "\(Int($0.value.rounded()))" },
+            unit: store.snapshot.rhr == nil ? nil : "bpm",
+            source: "Apple Health · denná hodnota",
+            status: store.snapshot.rhr.map(rhrStatusPresentation),
+            state: store.rhrState,
+            unavailableText: baselineUnavailableText(store.rhrState)
         ) {
-            MetricLineChart(points: store.rhrHistory.map { ($0.date, $0.value.value) }, color: .pink)
+            MetricDetailPanel(
+                theme: .restingHeartRate,
+                title: "Osobný kontext",
+                eyebrow: "7/28-dňová baseline"
+            ) {
+                Text("Pokojový pulz je denná hodnota zo Zdravia porovnaná s vašou osobnou baseline.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            MetricDetailPanel(
+                theme: .restingHeartRate,
+                title: "Posledné platné dni",
+                eyebrow: "Trend"
+            ) {
+                MetricLineChart(
+                    points: store.rhrHistory.map { ($0.date, $0.value.value) },
+                    theme: .restingHeartRate
+                )
+            }
         }
     }
 }
@@ -341,72 +373,41 @@ struct SpO2DetailView: View {
     let store: DailyOverviewStore
 
     var body: some View {
-        MetricDetailContainer(
-            title: "SpO₂",
-            symbol: "lungs.fill",
-            value: store.snapshot.spo2.map { "\(Int($0.value.rounded())) %" },
-            status: store.snapshot.spo2.map { "\(spo2Level($0.level)) · \(confidenceText($0.confidence)) kontext" },
-            explanation: "Odhad nasýtenia krvi kyslíkom zo zápästia. Nízky stav ostáva viditeľný bez ohľadu na množstvo histórie.",
-            state: store.spo2State
+        MetricDetailScreen(
+            theme: .oxygenSaturation,
+            value: store.snapshot.spo2.map { "\(Int($0.value.rounded()))" },
+            unit: store.snapshot.spo2 == nil ? nil : "%",
+            source: "Apple Health · počas hlavného spánku",
+            status: store.snapshot.spo2.map(spo2StatusPresentation),
+            state: store.spo2State,
+            unavailableText: detailUnavailableText(store.spo2State)
         ) {
-            MetricLineChart(points: store.spo2History.map { ($0.date, $0.value.value) }, color: .cyan)
-            Text("Watch Metrics nie je zdravotnícka pomôcka.")
-                .font(.caption2).foregroundStyle(.secondary)
-        }
-    }
-}
-
-struct MetricDetailContainer<Content: View>: View {
-    let title: String
-    let symbol: String
-    let value: String?
-    let status: String?
-    let explanation: String
-    let state: DataLoadState
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.spacing) {
-                Label(title, systemImage: symbol)
-                    .foregroundStyle(AppTheme.accent)
-                if state == .loading {
-                    PulsingSkeleton()
-                } else if let value {
-                    Text(value).font(.largeTitle.weight(.bold))
-                    if let status {
-                        StatusBadge(text: status)
-                    }
-                } else {
-                    DataStateView(state: state)
-                }
-                Text(explanation).font(.caption).foregroundStyle(AppTheme.secondaryText)
-                content()
+            MetricDetailPanel(
+                theme: .oxygenSaturation,
+                title: "Nočný kontext",
+                eyebrow: "Okysličenie krvi"
+            ) {
+                Text("Odhad nasýtenia krvi kyslíkom zo zápästia. Nízky stav ostáva viditeľný bez ohľadu na množstvo histórie.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 8)
-        }
-        .navigationTitle(title)
-        .containerBackground(AppTheme.background.gradient, for: .navigation)
-    }
-}
 
-struct MetricLineChart: View {
-    let points: [(Date, Double)]
-    let color: Color
-
-    var body: some View {
-        if points.count >= 2 {
-            Chart(points, id: \.0) { point in
-                LineMark(x: .value("Deň", point.0), y: .value("Hodnota", point.1))
-                PointMark(x: .value("Deň", point.0), y: .value("Hodnota", point.1))
+            MetricDetailPanel(
+                theme: .oxygenSaturation,
+                title: "Posledné platné noci",
+                eyebrow: "Trend"
+            ) {
+                MetricLineChart(
+                    points: store.spo2History.map { ($0.date, $0.value.value) },
+                    theme: .oxygenSaturation
+                )
             }
-            .foregroundStyle(color)
-            .chartXAxis(.hidden)
-            .frame(height: 80)
-            .accessibilityLabel("Trend za posledných \(points.count) dní")
-        } else {
-            Text("Trend zatiaľ nie je dostupný.")
-                .font(.caption2).foregroundStyle(.secondary)
+
+            MetricQuietFooter(
+                symbol: "info.circle",
+                text: "Watch Metrics nie je zdravotnícka pomôcka."
+            )
         }
     }
 }
@@ -474,32 +475,6 @@ struct DeveloperMenuView: View {
     }
 }
 
-struct StatusBadge: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(AppTheme.elevatedBackground, in: Capsule())
-    }
-}
-
-struct DataStateView: View {
-    let state: DataLoadState
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: state == .permissionDenied ? "lock.fill" : "waveform.slash")
-            Text(stateMessage(state)).font(.caption).multilineTextAlignment(.center)
-        }
-        .foregroundStyle(AppTheme.secondaryText)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-    }
-}
-
 extension View {
     func cardStyle() -> some View {
         self
@@ -511,11 +486,6 @@ extension View {
             )
             .contentShape(RoundedRectangle(cornerRadius: AppTheme.cardCornerRadius))
     }
-}
-
-func durationText(_ duration: TimeInterval) -> String {
-    let minutes = Int(duration / 60)
-    return "\(minutes / 60) h \(minutes % 60) min"
 }
 
 func confidenceText(_ confidence: ConfidenceLevel) -> String {
@@ -570,19 +540,118 @@ func rhrColor(_ level: RHRStatusLevel) -> Color {
     }
 }
 
-func recoveryColor(_ level: RecoverySignalLevel) -> Color {
-    switch level {
-    case .strained: AppTheme.statusLow
-    case .mixed: AppTheme.accent
-    case .typical, .favorable: AppTheme.statusNormal
-    }
-}
-
 func spo2Color(_ level: SpO2StatusLevel) -> Color {
     switch level {
     case .normal: AppTheme.statusNormal
     case .low: AppTheme.statusLow
     case .critical: AppTheme.statusCritical
+    }
+}
+
+func hrvStatusColor(_ level: HRVStatusLevel) -> Color {
+    switch level {
+    case .low: AppTheme.statusLow
+    case .normal, .high: AppTheme.statusNormal
+    }
+}
+
+func rhrStatusColor(_ level: RHRStatusLevel) -> Color {
+    switch level {
+    case .suppressed, .normal: AppTheme.statusNormal
+    case .elevated: AppTheme.statusLow
+    }
+}
+
+func spo2StatusColor(_ level: SpO2StatusLevel) -> Color {
+    switch level {
+    case .normal: AppTheme.statusNormal
+    case .low: AppTheme.statusLow
+    case .critical: AppTheme.statusCritical
+    }
+}
+
+func hrvStatusPresentation(_ status: HRVStatus) -> MetricStatusPresentation {
+    MetricStatusPresentation(
+        text: hrvLevel(status.level),
+        context: "\(confidenceText(status.confidence)) istota",
+        color: hrvStatusColor(status.level)
+    )
+}
+
+func hrvStatusPresentation(_ status: RMSSDStatus) -> MetricStatusPresentation {
+    MetricStatusPresentation(
+        text: hrvLevel(status.level),
+        context: "\(confidenceText(status.confidence)) istota",
+        color: hrvStatusColor(status.level)
+    )
+}
+
+func rhrStatusPresentation(_ status: RHRStatus) -> MetricStatusPresentation {
+    MetricStatusPresentation(
+        text: rhrLevel(status.level),
+        context: "\(confidenceText(status.confidence)) istota",
+        color: rhrStatusColor(status.level)
+    )
+}
+
+func spo2StatusPresentation(_ status: SpO2Status) -> MetricStatusPresentation {
+    MetricStatusPresentation(
+        text: spo2Level(status.level),
+        context: "\(confidenceText(status.confidence)) kontext",
+        color: spo2StatusColor(status.level)
+    )
+}
+
+func hrvAgreementPresentation(_ insight: HRVAgreementInsight) -> MetricStatusPresentation {
+    switch insight {
+    case .bothLower:
+        MetricStatusPresentation(
+            text: hrvAgreementText(insight),
+            context: nil,
+            color: AppTheme.statusLow
+        )
+    case .bothTypicalOrHigher:
+        MetricStatusPresentation(
+            text: hrvAgreementText(insight),
+            context: nil,
+            color: AppTheme.statusNormal
+        )
+    case .mixed:
+        MetricStatusPresentation(
+            text: hrvAgreementText(insight),
+            context: nil,
+            color: AppTheme.dashboardAmber
+        )
+    case .insufficientRMSSD:
+        .neutral(hrvAgreementText(insight))
+    }
+}
+
+func detailUnavailableText(_ state: DataLoadState) -> String {
+    state == .loading ? "Načítavam…" : stateMessage(state)
+}
+
+func baselineUnavailableText(_ state: DataLoadState) -> String {
+    switch state {
+    case .loaded, .empty:
+        "Nedostatok dát pre osobnú baseline"
+    default:
+        detailUnavailableText(state)
+    }
+}
+
+func hrvUnavailableText(_ state: DataLoadState) -> String {
+    baselineUnavailableText(state)
+}
+
+func rmssdUnavailableText(_ state: DataLoadState) -> String {
+    switch state {
+    case .loading:
+        "Načítavam RMSSD…"
+    case .permissionDenied:
+        stateMessage(state)
+    default:
+        "Nedostatok RMSSD dát"
     }
 }
 
